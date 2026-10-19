@@ -1,0 +1,226 @@
+import React from 'react';
+import type { User, Message } from '../types/chat';
+import { SoundWaveLogo } from './SoundWaveLogo';
+import { Avatar } from './Avatar';
+import { Pin, ArrowLeftRight, LogOut, RotateCcw } from 'lucide-react';
+
+interface SidebarProps {
+  currentUser: User;
+  allUsers: User[];
+  activeContact: User;
+  onSelectContact: (contact: User) => void;
+  onQuickSwitchUser: (user: User) => void;
+  onLogout: () => void;
+  onResetData: () => void;
+  pinnedMessage?: Message | null;
+  getUnreadCount: (contactId: string) => number;
+  getLastMessage: (contactId: string) => Message | undefined;
+  className?: string;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentUser,
+  allUsers,
+  activeContact,
+  onSelectContact,
+  onQuickSwitchUser,
+  onLogout,
+  onResetData,
+  pinnedMessage,
+  getUnreadCount,
+  getLastMessage,
+  className = '',
+}) => {
+  const otherContacts = allUsers.filter(u => u.id !== currentUser.id && u.id !== activeContact.id);
+  const candidateUsersToSwitch = allUsers.filter(u => u.id !== currentUser.id);
+
+  return (
+    <aside className={`h-full bg-white border-r border-[#E5E7EB] flex flex-col justify-between shrink-0 select-none transition-all ${className}`}>
+      {/* Top Section */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Brand Header */}
+        <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
+          <SoundWaveLogo size="md" />
+        </div>
+
+        {/* Scrollable contacts section */}
+        <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-5">
+          {/* Active Contact Card */}
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-2">
+              กำลังสนทนา (Active Chat)
+            </div>
+            <div
+              onClick={() => onSelectContact(activeContact)}
+              className="bg-[#F8FAFC] border-2 border-[#111827] rounded-2xl p-3.5 shadow-subtle hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar
+                  initials={activeContact.initials}
+                  color={activeContact.avatarColor}
+                  size="md"
+                  status={activeContact.status}
+                  showStatus
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-[#111827] truncate">
+                      {activeContact.name}
+                    </h3>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>{activeContact.status === 'online' ? 'Online' : 'Active'}</span>
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">
+                    {activeContact.role}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pinned preview in active card */}
+              {pinnedMessage ? (
+                <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex items-start gap-1.5">
+                  <Pin className="w-3.5 h-3.5 text-[#F97316] shrink-0 mt-0.5" fill="#F97316" />
+                  <p className="text-xs text-slate-700 line-clamp-2 leading-relaxed">
+                    <span className="font-semibold text-[#F97316]">ปักหมุด: </span>
+                    {pinnedMessage.type === 'sticker' ? 'สติกเกอร์กราฟิก' : pinnedMessage.text}
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center gap-1.5 text-slate-400">
+                  <Pin className="w-3 h-3 text-slate-300" />
+                  <span className="text-[11px]">ยังไม่มีข้อความปักหมุด</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* OTHER CONTACTS Section */}
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-2">
+              OTHER CONTACTS
+            </div>
+            <div className="space-y-1.5">
+              {otherContacts.map((contact) => {
+                const unread = getUnreadCount(contact.id);
+                const lastMsg = getLastMessage(contact.id);
+
+                return (
+                  <button
+                    key={contact.id}
+                    onClick={() => onSelectContact(contact)}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-all text-left group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar
+                        initials={contact.initials}
+                        color={contact.avatarColor}
+                        size="md"
+                        status={contact.status}
+                        showStatus
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-[#111827] group-hover:text-[#0EA5E9] transition-colors truncate">
+                          {contact.name}
+                        </div>
+                        <div className="text-xs text-slate-500 truncate mt-0.5">
+                          {lastMsg
+                            ? lastMsg.type === 'sticker'
+                              ? '🎨 ส่งสติกเกอร์'
+                              : lastMsg.text
+                            : contact.role}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
+                      {lastMsg && (
+                        <span className="text-[10px] text-slate-400 font-medium tabular-nums">
+                          {lastMsg.timestamp}
+                        </span>
+                      )}
+
+                      {/* Unread badge: Orange #F97316 */}
+                      {unread > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-extrabold text-white bg-[#F97316] rounded-full shadow-sm tabular-nums animate-pulse">
+                          {unread}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Area: Current User + Quick Switch + Logout */}
+      <div className="p-3.5 border-t border-[#E5E7EB] bg-[#F8FAFC]">
+        {/* Current User Info */}
+        <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E5E7EB] shadow-subtle mb-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Avatar
+              initials={currentUser.initials}
+              color={currentUser.avatarColor}
+              size="sm"
+              status="online"
+              showStatus
+            />
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-[#111827] truncate">
+                {currentUser.name}
+              </div>
+              <div className="text-[11px] text-slate-500 truncate">
+                Personal account
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={onLogout}
+            title="ออกจากระบบ (Sign Out)"
+            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Quick Persona Switcher for testing two-way interactions */}
+        <div className="rounded-xl bg-white border border-[#E5E7EB] p-2">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold mb-1.5 px-1">
+            <span className="flex items-center gap-1">
+              <ArrowLeftRight className="w-3 h-3 text-[#0EA5E9]" />
+              <span>Persona Switcher:</span>
+            </span>
+            <span className="text-[10px] text-slate-400">คลิกสลับ</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1">
+            {candidateUsersToSwitch.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => onQuickSwitchUser(u)}
+                title={`สลับเป็น ${u.name} (${u.role})`}
+                className="flex items-center gap-1 p-1 rounded-lg border border-slate-200 hover:border-[#0EA5E9] hover:bg-sky-50 transition-all text-left text-[11px] font-medium text-slate-700 truncate"
+              >
+                <Avatar initials={u.initials} color={u.avatarColor} size="xs" />
+                <span className="truncate">{u.name.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Reset Demo Data button */}
+        <button
+          onClick={onResetData}
+          className="w-full mt-2 flex items-center justify-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 py-1 transition-colors"
+        >
+          <RotateCcw className="w-3 h-3" />
+          <span>รีเซ็ตข้อมูลทดสอบ (Reset Demo)</span>
+        </button>
+      </div>
+    </aside>
+  );
+};
