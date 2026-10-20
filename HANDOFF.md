@@ -1,10 +1,10 @@
 # 🤝 HusH Multi-Agent Handoff Document (Session Continuity)
 
-**Target Version:** `v1.1.0-mockup`  
-**Git Branch:** `feat/v1.1.0-rbac-and-schedule`  
-**Base / Previous Version on `main`:** `v1.0.1` (Commit `504a0b9`)  
-**Next Planned Milestone:** Phase 2 (Go Fiber WebSocket Backend on Render + Neon PostgreSQL on Port 5432 + Vercel)  
-**Status:** ✅ **v1.1.0-mockup Quality Gate Passed & Ready for Push to feat/v1.1.0-rbac-and-schedule**
+**Target Version:** `v2.0.0` (Production Release)  
+**Git Branches:** `feat/v2.0.0-neon-production` and `main`  
+**Production Live URL:** `https://hush-chat-omega.vercel.app`  
+**Database:** Neon Serverless PostgreSQL (`ep-muddy-hill`)  
+**Status:** ✅ **v2.0.0 Production Deployed & Verified**
 
 ---
 
@@ -12,149 +12,126 @@
 
 This handoff document provides continuous context for any incoming developer, AI agent, or engineering team member.
 
-In **`v1.1.0-mockup`**, the squad finalized the complete relational data architecture, tiered RBAC, user management console, and 1:1 Apple iPhone Calendar scheduling engine:
+In **`v2.0.0`**, HusH transitioned from a client-side mockup to a **100% real Database-Backed Production Application** connected live to **Neon Serverless PostgreSQL** and deployed on **Vercel**:
 
-1. **iPhone Calendar Experience (1:1 Schedule):**
-   - Interactive monthly calendar with Thai/Buddhist year support, navigation chevrons, Today red circle (`#EF4444`), and event indicator dots.
-   - Selected Day Agenda View with left colored stripe, time slot, and auto-message preview.
-   - Segmented view switcher (`Month View` / `Agenda View` / `New Event`).
-   - Quick presets for instant testing (⚡ *In 10s*, ⏱️ *In 1m*, 🌅 *Tomorrow 9am*).
-2. **Automated Pop-Up & Chat Message Dispatcher:**
-   - Real-time 1-second interval checking due schedules where `scheduledAt <= now` and `!isTriggered`.
-   - Dispatches message directly into 1:1 chat with `isScheduledDispatch: true` and `📅 Scheduled Reminder` badge.
-   - Triggers on-screen **Schedule Due Pop-Up Alert Modal** with sound haptics and Jump to Chat action.
-3. **Admin User Management Console & Tiered RBAC:**
-   - `SYSTEM_ADMIN` (`admin`): Dedicated User & Directory Admin. Strictly forbidden from chatting (`canChat: false`). Routes directly to Admin Console upon login.
-   - `OWNER_ADMIN` (`alex`): Primary personal account with full administrative authority + full 1:1 chat and schedule capabilities.
-   - `FULL_ACCESS` Member (`sarah`): Can view all users, open Admin Console, create users, and edit permissions.
-   - `VIEW_ALL` Member (`marcus`, `sophie`): Can view all directory users and start 1:1 chat, but cannot manage users.
-   - `USER` Standard Member (`elena`, `david`): Restricted directory visibility. Only sees confirmed friends.
-4. **Username Friend System:**
-   - `+ Add Friend by Username` modal for standard members to look up and add contacts by exact `@username`.
-5. **Chat Header Cleanup:**
-   - Completely removed deprecated `Auto-clears after 3 months` pill and `Simulate` button.
-   - Replaced with clean `📅 Schedule` button displaying upcoming event count badge.
+1. **Mock Data Purge:**
+   - 100% of mock personas, mock conversations, and demo login switchers permanently removed.
+2. **Provisioned Relational Database Tables on Neon DB:**
+   - `users`: Separated user accounts, RBAC access levels, immutable admin protection.
+   - `conversations`: 1:1 participant pair with ordered UUID constraints (`chk_ordered_pair`).
+   - `messages`: Message stream with 90-day automated retention purge.
+   - `message_reactions`: Multi-user emoji reactions.
+   - `user_contacts`: 1:1 friend relationships, custom nicknames, per-chat background themes.
+   - `schedules`: 1:1 Apple Calendar events with automated pop-up & message dispatch.
+3. **Initial Seeded Production Accounts:**
+   - `@Hushadmin`: Protected Sole System Administrator (`SYSTEM_ADMIN`, `ADMIN_ONLY`, `can_chat: false`, routes directly to Admin Console).
+   - `@New010`: Nithi B. (Software Engineer & Co-Owner, `FULL_ACCESS`, 1:1 chat and admin access).
+   - `@Fernrs`: Fern RS (Product Specialist, `USER`, standard member, friend-by-username).
+   - Default Password: `password123`
+4. **Sole Admin Immutability Protection:**
+   - `@Hushadmin` is locked against modification or deletion in both the Admin Console UI and storage queries.
+5. **Ultra-Clean Login Experience:**
+   - Minimalist Username + Password form with show/hide password toggle.
+6. **Real-Time Synchronization:**
+   - Multi-device polling loop keeping messages, contacts, and schedules synchronized in real-time.
 
 ---
 
-## ⚡ Complete Neon PostgreSQL Relational Schema (DDL for Phase 2)
+## ⚡ Active Neon PostgreSQL Relational Schema (DDL)
 
 ```sql
--- ====================================================================
--- HusH Relational Database Schema — Neon Serverless PostgreSQL (DDL)
--- Version: v1.1.0-mockup (Branch: feat/v1.1.0-rbac-and-schedule)
--- ====================================================================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Enable UUID extension and pgcrypto
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- 1. Users table (Normalized with Tiered RBAC & can_chat flag)
+-- 1. USERS TABLE
 CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(50) PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
-    job_title VARCHAR(100),
-    role VARCHAR(100),
-    bio TEXT,
-    phone VARCHAR(20),
-    age INT,
-    avatar_color VARCHAR(20) DEFAULT 'blue',
-    avatar_url TEXT,
-    status VARCHAR(20) DEFAULT 'offline',
-    account_type VARCHAR(30) NOT NULL CHECK (account_type IN ('SYSTEM_ADMIN', 'OWNER_ADMIN', 'MEMBER')),
-    access_level VARCHAR(30) NOT NULL CHECK (access_level IN ('FULL_ACCESS', 'VIEW_ALL', 'USER')),
-    can_chat BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username VARCHAR(64) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL DEFAULT '',
+  job_title VARCHAR(150),
+  bio TEXT,
+  phone VARCHAR(50),
+  age INTEGER,
+  avatar_url TEXT,
+  avatar_color VARCHAR(32) DEFAULT 'blue',
+  account_type VARCHAR(32) NOT NULL DEFAULT 'MEMBER',
+  access_level VARCHAR(32) NOT NULL DEFAULT 'USER',
+  can_chat BOOLEAN NOT NULL DEFAULT TRUE,
+  is_immutable_admin BOOLEAN NOT NULL DEFAULT FALSE,
+  is_online BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Constraint: SYSTEM_ADMIN can never have can_chat = true
-ALTER TABLE users ADD CONSTRAINT check_system_admin_no_chat 
-    CHECK (NOT (account_type = 'SYSTEM_ADMIN' AND can_chat = TRUE));
-
--- 2. Conversations table (Strictly 1:1 who-chats-with-whom mapping)
+-- 2. CONVERSATIONS TABLE
 CREATE TABLE IF NOT EXISTS conversations (
-    id VARCHAR(100) PRIMARY KEY, -- deterministic pair key e.g. userA_userB or UUID
-    participant_one_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    participant_two_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    pinned_message_id VARCHAR(100),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT check_distinct_participants CHECK (participant_one_id <> participant_two_id)
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_one_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_two_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  pinned_message_id UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_conversation_pair UNIQUE (user_one_id, user_two_id),
+  CONSTRAINT chk_ordered_pair CHECK (user_one_id < user_two_id)
 );
 
--- 3. Messages table (Strictly text, numbers, emojis, and Thiings stickers)
+-- 3. MESSAGES TABLE (90-Day Auto Retention)
 CREATE TABLE IF NOT EXISTS messages (
-    id VARCHAR(100) PRIMARY KEY,
-    conversation_id VARCHAR(100) REFERENCES conversations(id) ON DELETE CASCADE,
-    sender_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    receiver_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    message_type VARCHAR(20) NOT NULL CHECK (message_type IN ('text', 'sticker')),
-    content TEXT,
-    text_color VARCHAR(20) DEFAULT 'black',
-    font_size VARCHAR(10) DEFAULT 'M',
-    sticker_id VARCHAR(50),
-    sticker_file_id VARCHAR(100), -- Thiings.co Vercel Blob token
-    sticker_name VARCHAR(100),
-    status VARCHAR(20) DEFAULT 'sent',
-    is_scheduled_dispatch BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL DEFAULT '',
+  text_color VARCHAR(16) NOT NULL DEFAULT '#111827',
+  font_size VARCHAR(8) NOT NULL DEFAULT 'M',
+  sticker_id VARCHAR(128),
+  is_scheduled BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 4. User Contacts / Friendships (Per-user friend list & nickname overrides)
-CREATE TABLE IF NOT EXISTS user_contacts (
-    id VARCHAR(100) PRIMARY KEY,
-    owner_user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    contact_user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    custom_nickname VARCHAR(100),
-    chat_bg_color VARCHAR(20) DEFAULT '#FFFFFF',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE (owner_user_id, contact_user_id)
-);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
+  ON messages(conversation_id, created_at ASC);
 
--- 5. 1:1 Schedules & Automated Message Reminders
-CREATE TABLE IF NOT EXISTS schedules (
-    id VARCHAR(100) PRIMARY KEY,
-    conversation_id VARCHAR(100) REFERENCES conversations(id) ON DELETE CASCADE,
-    created_by_user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    target_user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(200) NOT NULL,
-    auto_message TEXT NOT NULL,
-    scheduled_at TIMESTAMPTZ NOT NULL,
-    is_triggered BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 6. Message Reactions
+-- 4. MESSAGE REACTIONS TABLE
 CREATE TABLE IF NOT EXISTS message_reactions (
-    message_id VARCHAR(100) REFERENCES messages(id) ON DELETE CASCADE,
-    user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    emoji VARCHAR(20) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (message_id, user_id, emoji)
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  emoji VARCHAR(32) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (message_id, user_id, emoji)
 );
 
--- 7. 90-Day Auto Retention Purge
-DELETE FROM messages WHERE created_at < NOW() - INTERVAL '90 days';
+-- 5. USER CONTACTS / FRIENDSHIPS TABLE
+CREATE TABLE IF NOT EXISTS user_contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  contact_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  custom_nickname VARCHAR(100),
+  chat_bg_color VARCHAR(16) NOT NULL DEFAULT '#FFFFFF',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (owner_user_id, contact_user_id)
+);
+
+-- 6. SCHEDULES TABLE
+CREATE TABLE IF NOT EXISTS schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  creator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  participant_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  auto_message TEXT NOT NULL,
+  scheduled_at TIMESTAMPTZ NOT NULL,
+  is_triggered BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 ```
 
 ---
 
-## 🚀 Exact Next Steps for Phase 2 Development Session
+## 🚀 Deployment Credentials & Environment
 
-1. **Git Commit & Push (Branch: `feat/v1.1.0-rbac-and-schedule`):**
-   ```bash
-   git checkout -b feat/v1.1.0-rbac-and-schedule
-   git add .
-   git commit -m "feat(release): v1.1.0-mockup - relational RBAC, admin console & iPhone 1:1 calendar"
-   git push -u origin feat/v1.1.0-rbac-and-schedule
-   ```
-2. **Phase 2 Backend Integration (Go Fiber + Neon PostgreSQL):**
-   - Provision a Neon PostgreSQL project and execute the schema DDL above.
-   - Seed pre-provisioned user accounts with bcrypt hashes.
-   - Implement Go Fiber WebSocket Hub supporting real-time chat broadcasts, contact nickname updates, and schedule notifications.
-   - Connect client WebSocket client to `wss://backend.render.com/ws`.
+- **Neon Database:** Serverless PostgreSQL pooler on AWS us-east-2
+- **Driver:** `@neondatabase/serverless` (HTTP fetch driver over SSL)
+- **Vercel Production URL:** `https://hush-chat-omega.vercel.app`
+- **GitHub Repository:** `https://github.com/NewNiThI2531/hush-chat.git`
+- **Production Branches:** `feat/v2.0.0-neon-production` and `main`

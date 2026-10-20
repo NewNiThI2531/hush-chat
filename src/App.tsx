@@ -75,9 +75,25 @@ export function App() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedId = storageService.getCurrentUserId();
+    if (!savedId) return null;
     const users = storageService.getAllUsers();
-    return users.find((u) => u.id === savedId) || users[0];
+    return users.find((u) => u.id === savedId) || null;
   });
+
+  // Initial sync & Background Neon polling for multi-client real-time sync
+  useEffect(() => {
+    storageService.init().then(() => {
+      triggerUpdate();
+    });
+
+    const pollInterval = setInterval(() => {
+      storageService.syncWithNeon().then(() => {
+        triggerUpdate();
+      });
+    }, 2500);
+
+    return () => clearInterval(pollInterval);
+  }, []);
 
   // Visible contacts based on RBAC
   const visibleContacts = useMemo(() => {
@@ -212,8 +228,10 @@ export function App() {
   };
 
   const handleLogout = () => {
+    storageService.setCurrentUserId('');
     setCurrentUser(null);
     setActiveContact(undefined);
+    triggerUpdate();
   };
 
   const handleSelectContact = (contact: User) => {
@@ -294,18 +312,11 @@ export function App() {
     setJumpTargetId(messageId);
   };
 
-  const handleResetData = () => {
-    if (window.confirm('คุณต้องการรีเซ็ตข้อมูล Mockup ทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
-      storageService.resetDemoData();
-      const users = storageService.getAllUsers();
-      const defaultUser = users[1] || users[0]; // alex
-      setCurrentUser(defaultUser);
-      const contacts = storageService.getVisibleContactsForUser(defaultUser);
-      setActiveContact(contacts[0]);
-      setMobileView('chat');
-      showToast('รีเซ็ตข้อมูลทดสอบสำเร็จ');
-      triggerUpdate();
-    }
+  const handleSyncDatabase = async () => {
+    showToast('กำลังซิงค์ข้อมูลกับ Neon Database...');
+    await storageService.syncWithNeon();
+    showToast('ซิงค์ข้อมูลล่าสุดสำเร็จ ✓');
+    triggerUpdate();
   };
 
   const handleUpdateSelfProfile = (updated: User) => {
@@ -392,6 +403,7 @@ export function App() {
           onSwitchUser={(user) => handleLogin(user)}
           onUsersUpdated={triggerUpdate}
           isStandalonePage={true}
+          onLogout={handleLogout}
         />
       </div>
     );
@@ -418,7 +430,7 @@ export function App() {
         activeContact={activeContact}
         onSelectContact={handleSelectContact}
         onLogout={handleLogout}
-        onResetData={handleResetData}
+        onResetData={handleSyncDatabase}
         onOpenProfileSettings={() => setIsSelfProfileOpen(true)}
         onOpenVersionModal={() => setIsVersionModalOpen(true)}
         onOpenAdminConsole={() => setIsAdminConsoleOpen(true)}

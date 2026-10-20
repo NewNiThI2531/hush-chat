@@ -283,13 +283,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Reset Demo Data button */}
+        {/* Neon Database Sync button */}
         <button
           onClick={onResetData}
-          className="w-full mt-2 flex items-center justify-center gap-1 text-[11px] text-slate-400 hover:text-slate-600 py-1 transition-colors cursor-pointer"
+          className="w-full mt-2 flex items-center justify-center gap-1.5 text-[11px] text-slate-400 hover:text-sky-600 py-1 transition-colors cursor-pointer"
+          title="ซิงค์ข้อมูลล่าสุดกับ Neon Serverless PostgreSQL"
         >
-          <RotateCcw className="w-3 h-3" />
-          <span>รีเซ็ตข้อมูลทดสอบ (Reset Demo)</span>
+          <RotateCcw className="w-3 h-3 text-sky-500" />
+          <span>ซิงค์ฐานข้อมูล (Sync Neon DB)</span>
         </button>
       </div>
     </aside>

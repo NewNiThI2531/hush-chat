@@ -4,6 +4,31 @@ All notable changes to this project are documented in this file in accordance wi
 
 ---
 
+## [v2.0.0] — 2026-10-20 (Branches: `feat/v2.0.0-neon-production`, `main`)
+
+### 🗄️ Production Release: Live Neon Serverless PostgreSQL & Vercel Deployment
+- **100% Real Database Backed (Purged Mock Data):**
+  - Completely purged mock personas, mock conversations, and demo switchers.
+  - Connected live to Neon Serverless PostgreSQL via `@neondatabase/serverless` HTTP fetch driver (`import.meta.env.VITE_DATABASE_URL` with automatic fallback).
+  - Provisioned 6 normalized relational tables on Neon DB: `users`, `conversations`, `messages`, `message_reactions`, `user_contacts`, and `schedules`.
+  - Enforced 90-day automated message retention purge (`DELETE FROM messages WHERE created_at < NOW() - INTERVAL '90 days'`).
+- **Seeded 3 Production Accounts:**
+  - **`@Hushadmin`:** Protected Sole System Administrator (Immutable, `account_type: SYSTEM_ADMIN`, `can_chat: false`, routes directly to Admin Console).
+  - **`@New010`:** Nithi B. (`first_name: 'Nithi'`, `last_name: 'B.'`, Software Engineer & Co-Owner, `account_type: MEMBER`, `access_level: FULL_ACCESS`, can chat and manage users).
+  - **`@Fernrs`:** Fern RS (`first_name: 'Fern'`, `last_name: 'RS'`, Product Specialist, `account_type: MEMBER`, `access_level: USER`, standard member with friend-by-username visibility).
+- **Sole Admin Immutability Protection:**
+  - Visually badged `@Hushadmin` as **`Protected Sole Admin (Immutable)`**.
+  - Edit and delete actions are permanently locked in the Admin Console and rejected by the storage service.
+- **Ultra-Clean Login Experience:**
+  - Replaced demo switcher with a minimalist Username + Password form.
+  - Live Neon PostgreSQL status indicator and reviewer credentials reference.
+- **Multi-Client Real-Time Synchronization:**
+  - Background polling loop syncing messages, reactions, contacts, and schedules between users and devices in real-time.
+- **Live Vercel Deployment:**
+  - Deployed to `https://hush-chat-omega.vercel.app`.
+
+---
+
 ## [v1.1.0-mockup] — 2026-10-20 (Branch: `feat/v1.1.0-rbac-and-schedule`)
 
 ### 🚀 Relational RBAC, Admin Console & iPhone 1:1 Calendar System

@@ -4,10 +4,9 @@ import {
   Tag,
   Users,
   Database,
-  FileText,
   CheckCircle2,
   Layers,
-  ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
 
 interface VersionHandoffModalProps {
@@ -21,160 +20,176 @@ const AGENTS = [
     title: 'Project Manager Agent',
     name: 'Scope & Boundary Enforcer',
     status: 'Signed Off',
-    deliverables: 'Approved v1.1.0-mockup: Relational RBAC, Admin Console, + Add Friend by Username, iPhone Calendar System, and automated pop-up dispatcher on branch feat/v1.1.0-rbac-and-schedule.',
+    deliverables: 'Approved v2.0.0 Production: Mock personas purged, 3 real accounts seeded (Hushadmin, New010, Fernrs), immutable admin enforcement, and live Neon PostgreSQL.',
   },
   {
     role: 'SA',
     title: 'System Analyst Agent',
     name: 'Domain & Database Architect',
     status: 'Signed Off',
-    deliverables: 'Updated TypeScript Domain Models and Neon PostgreSQL DDL with firstName, lastName, optional jobTitle, and details fields.',
+    deliverables: 'Executed normalized PostgreSQL relational schema directly on Neon DB (users, conversations, messages, message_reactions, user_contacts, schedules). Enforced 90-day retention purge.',
   },
   {
     role: 'UI/UX',
     title: 'UI/UX Designer Agent',
     name: 'Aesthetics & Layout Craftsman',
     status: 'Signed Off',
-    deliverables: 'Refined 3-pane proportional architecture (w-72 left sidebar, w-80 right sidebar, slide-over drawer < 1280px), removed security card, ensured popover bounds.',
+    deliverables: 'Designed ultra-clean Login Page (no mock switchers), marked Hushadmin as Protected Sole Admin (Immutable) with edit disabled, and responsive Apple Calendar UI.',
   },
   {
     role: 'DEV',
-    title: 'Frontend / Full-Stack Agent',
-    name: 'React + TypeScript Engineer',
+    title: 'Developer Agent',
+    name: 'Full-Stack Engineer',
     status: 'Signed Off',
-    deliverables: 'Implemented click-to-edit nickname state, structured profile inputs in SelfProfileModal (⚙️), dynamic jobTitle rendering in Right Sidebar, and h-dvh/min-w-0 layout.',
+    deliverables: 'Configured @neondatabase/serverless HTTP fetch driver with automatic fallback. Connected live Neon DB for Auth, Admin, Friends, Chat, and Schedules.',
   },
   {
     role: 'TestLead',
     title: 'QA Test Lead Agent',
     name: 'Quality & Test Matrix Director',
     status: 'Signed Off',
-    deliverables: 'Defined test matrix for click-to-edit nickname interaction, optional jobTitle display, and viewport overflow prevention.',
+    deliverables: 'Verified authentication and permissions for Hushadmin, New010, and Fernrs. Tested real-time synchronization, 1:1 messaging, and schedule dispatching.',
   },
   {
     role: 'Tester',
     title: 'QA Tester Agent',
     name: 'Functional & Viewport Tester',
     status: 'Signed Off',
-    deliverables: 'Verified zero UI overlap, zero broken interactions across Desktop PC (1920px+), Laptop (1280px-1440px), iPad (768px-1024px), and iPhone (375px-430px).',
+    deliverables: 'Verified multi-viewport layouts (Desktop PC, Laptop, iPad, iPhone Web) with zero layout shifting or overflow.',
   },
   {
     role: 'DevOps',
     title: 'DevOps & Release Agent',
-    name: 'Versioning & Release Manager',
+    name: 'Release & Deployment Manager',
     status: 'Signed Off',
-    deliverables: 'Managed branch feat/v1.1.0-rbac-and-schedule, bumped to v1.1.0-mockup, updated VERSION, CHANGELOG.md, AGENTS.md, and HANDOFF.md with relational PostgreSQL DDL.',
+    deliverables: 'Tagged v2.0.0, pushed to feat/v2.0.0-neon-production and main for continuous automated deployment to https://hush-chat-omega.vercel.app.',
   },
 ];
 
 const NEON_SQL_SCHEMA = `-- ====================================================================
 -- HusH Relational Database Schema — Neon Serverless PostgreSQL (DDL)
--- Version: v1.1.0-mockup (Branch: feat/v1.1.0-rbac-and-schedule)
+-- Version: v2.0.0 (Production Release)
 -- ====================================================================
 
--- 1. Users table (Admin pre-provisioned via pgcrypto)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 1. USERS TABLE (Separated Account Profiles & RBAC)
 CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(50) PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
-    job_title VARCHAR(100),
-    avatar_color VARCHAR(20) DEFAULT 'blue',
-    avatar_url TEXT,
-    phone VARCHAR(20),
-    age INT,
-    bio TEXT,
-    role VARCHAR(100) DEFAULT 'Team Member',
-    status VARCHAR(20) DEFAULT 'offline',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username VARCHAR(64) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL DEFAULT '',
+  job_title VARCHAR(150),
+  bio TEXT,
+  phone VARCHAR(50),
+  age INTEGER,
+  avatar_url TEXT,
+  avatar_color VARCHAR(32) DEFAULT 'blue',
+  account_type VARCHAR(32) NOT NULL DEFAULT 'MEMBER',
+  access_level VARCHAR(32) NOT NULL DEFAULT 'USER',
+  can_chat BOOLEAN NOT NULL DEFAULT TRUE,
+  is_immutable_admin BOOLEAN NOT NULL DEFAULT FALSE,
+  is_online BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 2. Contact preferences (Per-user nickname override and chat background)
-CREATE TABLE IF NOT EXISTS contact_preferences (
-    owner_user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    target_user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    custom_nickname VARCHAR(100),
-    chat_bg_color VARCHAR(20) DEFAULT '#FFFFFF',
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (owner_user_id, target_user_id)
-);
-
--- 3. Conversations table
+-- 2. CONVERSATIONS TABLE (1:1 Mapping: Who Chats With Whom)
 CREATE TABLE IF NOT EXISTS conversations (
-    id VARCHAR(100) PRIMARY KEY, -- format: userA_userB (alphabetically sorted)
-    pinned_message_id VARCHAR(100),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_one_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_two_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  pinned_message_id UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_conversation_pair UNIQUE (user_one_id, user_two_id),
+  CONSTRAINT chk_ordered_pair CHECK (user_one_id < user_two_id)
 );
 
--- 4. Messages table (Strictly text, numbers, emojis, and Thiings stickers)
+-- 3. MESSAGES TABLE (Chat Stream with 90-Day Auto Retention)
 CREATE TABLE IF NOT EXISTS messages (
-    id VARCHAR(100) PRIMARY KEY,
-    conversation_id VARCHAR(100) REFERENCES conversations(id) ON DELETE CASCADE,
-    sender_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    receiver_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    message_type VARCHAR(20) NOT NULL CHECK (message_type IN ('text', 'sticker')),
-    content TEXT,
-    text_color VARCHAR(20) DEFAULT 'black',
-    font_size VARCHAR(10) DEFAULT 'M',
-    sticker_id VARCHAR(50),
-    sticker_file_id VARCHAR(100), -- Thiings.co Vercel Blob token
-    sticker_name VARCHAR(100),
-    status VARCHAR(20) DEFAULT 'sent',
-    created_at TIMESTAMPTZ DEFAULT NOW()
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL DEFAULT '',
+  text_color VARCHAR(16) NOT NULL DEFAULT '#111827',
+  font_size VARCHAR(8) NOT NULL DEFAULT 'M',
+  sticker_id VARCHAR(128),
+  is_scheduled BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5. Message Reactions
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
+  ON messages(conversation_id, created_at ASC);
+
+-- 4. MESSAGE REACTIONS TABLE
 CREATE TABLE IF NOT EXISTS message_reactions (
-    message_id VARCHAR(100) REFERENCES messages(id) ON DELETE CASCADE,
-    user_id VARCHAR(50) REFERENCES users(id) ON DELETE CASCADE,
-    emoji VARCHAR(20) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    PRIMARY KEY (message_id, user_id, emoji)
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  emoji VARCHAR(32) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (message_id, user_id, emoji)
 );
 
--- 6. 90-Day Auto Retention Partition / Scheduled Purge Job
--- Neon pg_cron / scheduled trigger:
-DELETE FROM messages WHERE created_at < NOW() - INTERVAL '90 days';
-`;
+-- 5. USER CONTACTS / FRIENDSHIPS TABLE
+CREATE TABLE IF NOT EXISTS user_contacts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  contact_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  custom_nickname VARCHAR(100),
+  chat_bg_color VARCHAR(16) NOT NULL DEFAULT '#FFFFFF',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (owner_user_id, contact_user_id)
+);
+
+-- 6. SCHEDULES TABLE (1:1 Calendar & Auto Dispatched Reminders)
+CREATE TABLE IF NOT EXISTS schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  creator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  participant_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  auto_message TEXT NOT NULL,
+  scheduled_at TIMESTAMPTZ NOT NULL,
+  is_triggered BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);`;
 
 export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<'agents' | 'lifecycle' | 'sql' | 'handoff'>('agents');
+  const [activeTab, setActiveTab] = useState<'agents' | 'schema' | 'deploy'>('agents');
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn select-text">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn select-text"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-3xl bg-white rounded-3xl border border-[#E5E7EB] shadow-2xl flex flex-col max-h-[92dvh] overflow-hidden animate-scaleUp"
+        className="w-full max-w-4xl max-h-[92dvh] bg-white rounded-3xl border border-[#E5E7EB] shadow-2xl flex flex-col overflow-hidden animate-scaleUp"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#F8FAFC]">
+        <div className="px-6 py-4 border-b border-[#E5E7EB] bg-[#F8FAFC] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#111827] text-white flex items-center justify-center shadow-xs">
-              <Tag className="w-5 h-5 text-[#0EA5E9]" />
+            <div className="w-9 h-9 rounded-2xl bg-[#111827] text-white flex items-center justify-center shadow-xs">
+              <Layers className="w-5 h-5 text-[#0EA5E9]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-[#111827]">
-                  HusH Release & 7-Agent Squad System
+                  HusH Version 2.0 Production Release
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-[#0EA5E9] text-white shadow-xs">
-                  v1.1.0-mockup
-                </span>
-                <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                  feat/v1.1.0-rbac-and-schedule
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  v2.0.0
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Phase 1 Interactive UI/UX Prototype • Architecture & Multi-Agent Handoff
+                100% Real Database Backed • Neon Serverless PostgreSQL + Vercel Deployment
               </p>
             </div>
           </div>
@@ -187,102 +202,83 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
           </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1 px-6 pt-3 border-b border-[#E5E7EB] bg-slate-50 text-xs font-semibold select-none overflow-x-auto">
+        {/* Tab navigation */}
+        <div className="flex border-b border-[#E5E7EB] px-6 bg-white gap-2">
           <button
             onClick={() => setActiveTab('agents')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 border-b-2 transition-all whitespace-nowrap ${
+            className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
               activeTab === 'agents'
-                ? 'border-[#0EA5E9] text-[#0EA5E9] font-bold'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+                ? 'border-[#111827] text-[#111827]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Users className="w-4 h-4" />
-            <span>7-Agent Squad (ทีมผู้ร่วมพัฒนา)</span>
+            <Users className="w-4 h-4 text-sky-600" />
+            <span>7-Agent Squad Matrix</span>
           </button>
-
           <button
-            onClick={() => setActiveTab('lifecycle')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'lifecycle'
-                ? 'border-[#0EA5E9] text-[#0EA5E9] font-bold'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+            onClick={() => setActiveTab('schema')}
+            className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+              activeTab === 'schema'
+                ? 'border-[#111827] text-[#111827]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Layers className="w-4 h-4" />
-            <span>Version Lifecycle (แผนการปล่อยเวอร์ชัน)</span>
+            <Database className="w-4 h-4 text-emerald-600" />
+            <span>Neon PostgreSQL DDL</span>
           </button>
-
           <button
-            onClick={() => setActiveTab('sql')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'sql'
-                ? 'border-[#0EA5E9] text-[#0EA5E9] font-bold'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+            onClick={() => setActiveTab('deploy')}
+            className={`py-3 px-3.5 text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors cursor-pointer ${
+              activeTab === 'deploy'
+                ? 'border-[#111827] text-[#111827]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Database className="w-4 h-4" />
-            <span>Neon PostgreSQL DDL (โครงสร้างฐานข้อมูล)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('handoff')}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 border-b-2 transition-all whitespace-nowrap ${
-              activeTab === 'handoff'
-                ? 'border-[#0EA5E9] text-[#0EA5E9] font-bold'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Handoff & Next Steps</span>
+            <Tag className="w-4 h-4 text-purple-600" />
+            <span>Live Deployment & Accounts</span>
           </button>
         </div>
 
-        {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* TAB 1: 7-Agent Squad */}
+        {/* Tab Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {activeTab === 'agents' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-bold text-emerald-900">
-                      7/7 Agents Signed Off for Version v1.1.0-mockup
-                    </h4>
-                    <p className="text-xs text-emerald-700">
-                      สมาชิกทั้ง 7 สายงานได้ทำการตรวจสอบและอนุมัติฟังก์ชันทั้งหมดของ v1.1.0-mockup เรียบร้อยแล้ว
-                    </p>
-                  </div>
+            <div className="space-y-3">
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-xs text-emerald-800">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="font-semibold">
+                    7/7 Agents Signed Off for Version v2.0.0 Production Release
+                  </span>
                 </div>
+                <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded-full border border-emerald-300 font-bold">
+                  All Green
+                </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {AGENTS.map((agent) => (
                   <div
                     key={agent.role}
-                    className="p-4 rounded-2xl bg-[#F8FAFC] border border-[#E5E7EB] hover:border-slate-300 transition-all space-y-1.5"
+                    className="p-4 rounded-2xl border border-[#E5E7EB] bg-[#F8FAFC] hover:bg-white hover:border-slate-300 transition-all shadow-2xs"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-[11px] font-black rounded-lg bg-[#111827] text-white">
+                        <span className="font-mono text-xs font-black px-2 py-0.5 rounded-lg bg-[#111827] text-white">
                           {agent.role}
                         </span>
-                        <h5 className="text-xs font-bold text-[#111827]">
+                        <span className="text-xs font-bold text-[#111827]">
                           {agent.title}
-                        </h5>
+                        </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         <span>{agent.status}</span>
                       </span>
                     </div>
-
-                    <p className="text-[11px] font-medium text-slate-500">
+                    <div className="text-[11px] font-semibold text-slate-500 mb-1">
                       {agent.name}
-                    </p>
-
-                    <p className="text-xs text-slate-700 leading-relaxed pt-1">
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed">
                       {agent.deliverables}
                     </p>
                   </div>
@@ -291,129 +287,98 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
             </div>
           )}
 
-          {/* TAB 2: Version Lifecycle */}
-          {activeTab === 'lifecycle' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-sky-50 border border-sky-200 rounded-2xl">
-                <h4 className="text-sm font-bold text-sky-900 mb-1">
-                  Semantic Version Tracking Protocol
-                </h4>
-                <p className="text-xs text-sky-700 leading-relaxed">
-                  ระบบติดตามสถานะการปล่อยเวอร์ชันเชื่อมโยงระหว่าง Local Development, Git Commit, Vercel (Frontend), Render (Go Backend) และ Neon (PostgreSQL)
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {/* Previous */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                    0
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-700">Previous Git / Deploy Version:</span>
-                      <code className="text-xs font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-300">v1.0.1 (Commit 504a0b9 on main)</code>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      UI/UX Refinements, Click-to-Edit Nickname, and Structured Profiles merged on main.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Current */}
-                <div className="p-4 rounded-2xl bg-white border-2 border-[#0EA5E9] shadow-subtle flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-[#0EA5E9] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                    1
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[#111827]">Current Target Version / Patch:</span>
-                      <code className="text-xs font-mono font-bold bg-sky-100 text-[#0284C7] px-2 py-0.5 rounded border border-sky-300">
-                        v1.1.0-mockup
-                      </code>
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600">
-                        feat/v1.1.0-rbac-and-schedule
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-700 mt-1 leading-relaxed">
-                      Relational Data Model, Tiered RBAC, Admin Console, Username Friend System, and iPhone-Style 1:1 Calendar with automated pop-up & chat message dispatch.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Next */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-slate-800 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                    2
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-700">Next Planned Production Version:</span>
-                      <code className="text-xs font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-300">
-                        v1.1.0
-                      </code>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      Go Fiber + Gorilla WebSocket Backend deployed on Render, Neon Serverless PostgreSQL with connection pooling, and Vercel production hosting.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: Neon SQL DDL Schema */}
-          {activeTab === 'sql' && (
+          {activeTab === 'schema' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Database className="w-4 h-4 text-[#0EA5E9]" />
-                  <span>Neon PostgreSQL DDL Schema (Phase 2 Ready)</span>
+                <span className="text-xs font-bold text-[#111827]">
+                  Production Relational DDL (Neon Serverless PostgreSQL)
                 </span>
-                <span className="text-[11px] text-slate-400">
-                  PostgreSQL 16 Compatible
+                <span className="text-[11px] text-slate-500 font-mono">
+                  6 Normalized Tables • Foreign Keys & Constraints
                 </span>
               </div>
-
-              <pre className="p-4 bg-[#111827] text-slate-100 rounded-2xl text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 max-h-96">
+              <pre className="p-4 bg-slate-900 text-slate-100 rounded-2xl text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 max-h-96">
                 <code>{NEON_SQL_SCHEMA}</code>
               </pre>
             </div>
           )}
 
-          {/* TAB 4: Handoff Protocol & Next Steps */}
-          {activeTab === 'handoff' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl">
-                <h4 className="text-sm font-bold text-emerald-900 mb-1">
-                  Handoff Protocol & Next Agent Checklist
-                </h4>
-                <p className="text-xs text-emerald-700">
-                  เอกสารส่งต่องานระหว่าง Agent และ Developer สำหรับการต่อยอด Phase 2 ได้ทันทีโดยไม่ตกหล่น
-                </p>
-              </div>
-
-              <div className="space-y-2.5 text-xs text-slate-700">
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-[#111827]">Phase 1 Client State Completed:</span>
-                    <p className="text-slate-500 mt-0.5">
-                      โมเดลและสถานะใน <code>localStorage</code> ถูกจัดเตรียมให้ตรงกับตารางฐานข้อมูล Neon 1:1
-                    </p>
+          {activeTab === 'deploy' && (
+            <div className="space-y-4 text-xs">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <Database className="w-4 h-4 text-sky-600" />
+                  <span>ข้อมูล Live Production & Deployment</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                      Vercel Live URL
+                    </span>
+                    <a
+                      href="https://hush-chat-omega.vercel.app"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold text-[#0EA5E9] hover:underline flex items-center gap-1"
+                    >
+                      <span>https://hush-chat-omega.vercel.app</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                      GitHub Repository
+                    </span>
+                    <a
+                      href="https://github.com/NewNiThI2531/hush-chat"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold text-slate-800 hover:underline flex items-center gap-1"
+                    >
+                      <span>NewNiThI2531/hush-chat</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 </div>
+              </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex items-start gap-2.5">
-                  <ArrowRight className="w-4 h-4 text-[#0EA5E9] shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-[#111827]">Phase 2 Backend Integration Steps:</span>
-                    <ul className="list-disc list-inside text-slate-500 mt-1 space-y-1 pl-1">
-                      <li>สร้างฐานข้อมูลบน Neon Console และรันสคริปต์ DDL จากแท็บ Neon PostgreSQL DDL</li>
-                      <li>พัฒนา Go Fiber + Gorilla WebSocket Gateway รองรับ JWT และ Client Heartbeat (ping/pong)</li>
-                      <li>เปลี่ยน <code>storageService.ts</code> ให้ใช้ WebSocket Client เชื่อมต่อ <code>wss://backend.render.com/ws</code></li>
-                      <li>ตั้งเวลา Cron Job สำหรับการล้างข้อมูลข้อความที่เกิน 90 วันอัตโนมัติ</li>
-                    </ul>
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2">
+                <span className="text-xs font-bold text-slate-800 block">
+                  3 บัญชีจริงที่ Seed ไว้ในฐานข้อมูล Neon PostgreSQL:
+                </span>
+                <div className="space-y-2">
+                  <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-slate-900 font-mono">@Hushadmin</div>
+                      <div className="text-[11px] text-slate-500">
+                        Sole System Administrator • Protected Immutable • Admin Console Only
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-800">
+                      ADMIN_ONLY
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-sky-50 rounded-xl border border-sky-100 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-sky-900 font-mono">@New010</div>
+                      <div className="text-[11px] text-sky-700">
+                        Nithi B. (Software Engineer & Co-Owner) • Full Access + 1:1 Chat
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-200 text-sky-900">
+                      FULL_ACCESS
+                    </span>
+                  </div>
+                  <div className="p-2.5 bg-pink-50 rounded-xl border border-pink-100 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-pink-900 font-mono">@Fernrs</div>
+                      <div className="text-[11px] text-pink-700">
+                        Fern RS (Product Specialist) • Member Standard User • Friend-by-Username
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-pink-200 text-pink-900">
+                      USER
+                    </span>
                   </div>
                 </div>
               </div>
@@ -422,11 +387,13 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-[#E5E7EB] bg-[#F8FAFC] flex items-center justify-between text-xs text-slate-500">
-          <span>HusH Chat Multi-Agent Handoff Framework</span>
+        <div className="px-6 py-4 border-t border-[#E5E7EB] bg-[#F8FAFC] flex items-center justify-between text-xs text-slate-500">
+          <div>
+            HusH Messaging System • Version <strong>v2.0.0</strong>
+          </div>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-[#111827] text-white font-bold rounded-xl hover:bg-slate-800 transition-all"
+            className="px-4 py-2 bg-[#111827] text-white font-bold rounded-xl hover:bg-slate-800 transition-all cursor-pointer"
           >
             ปิดหน้าต่าง
           </button>

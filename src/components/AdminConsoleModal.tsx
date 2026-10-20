@@ -12,6 +12,8 @@ import {
   AlertCircle,
   MessageSquareOff,
   MessageSquare,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface AdminConsoleModalProps {
@@ -21,6 +23,7 @@ interface AdminConsoleModalProps {
   onSwitchUser?: (user: User) => void;
   onUsersUpdated?: () => void;
   isStandalonePage?: boolean;
+  onLogout?: () => void;
 }
 
 export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
@@ -30,6 +33,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   onSwitchUser,
   onUsersUpdated,
   isStandalonePage = false,
+  onLogout,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
@@ -170,6 +174,14 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   };
 
   const getAccessBadge = (user: User) => {
+    if (user.isImmutableAdmin || user.username.toLowerCase() === 'hushadmin') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#111827] text-white shadow-xs border border-slate-700">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Protected Sole Admin (Immutable)</span>
+        </span>
+      );
+    }
     if (user.accountType === 'SYSTEM_ADMIN') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#111827] text-white shadow-xs">
@@ -234,7 +246,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                   Admin & User Directory Console
                 </h2>
                 <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  Relational RBAC v1.1
+                  Neon PostgreSQL • v2.0.0
                 </span>
               </div>
               <p className="text-xs text-slate-500">
@@ -397,14 +409,25 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                       {/* Actions */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(user)}
-                            className="p-1.5 text-slate-500 hover:text-[#0EA5E9] hover:bg-sky-50 rounded-lg transition-all border border-slate-200 cursor-pointer"
-                            title="แก้ไขชื่อผู้ใช้, สิทธิ์ และข้อมูลส่วนตัว"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                          {user.isImmutableAdmin || user.username.toLowerCase() === 'hushadmin' ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="p-1.5 text-slate-400 bg-slate-100 rounded-lg border border-slate-200 cursor-not-allowed opacity-60"
+                              title="Protected Sole Admin (Immutable): บัญชีนี้ถูกล็อกความปลอดภัยสูงสุด ไม่สามารถแก้ไขหรือลบได้"
+                            >
+                              <Lock className="w-3.5 h-3.5 text-slate-500" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(user)}
+                              className="p-1.5 text-slate-500 hover:text-[#0EA5E9] hover:bg-sky-50 rounded-lg transition-all border border-slate-200 cursor-pointer"
+                              title="แก้ไขชื่อผู้ใช้, สิทธิ์ และข้อมูลส่วนตัว"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
                           {onSwitchUser && !isCurrent && (
                             <button
@@ -435,6 +458,16 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {isStandalonePage && onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="px-4 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs text-xs"
+              >
+                <span>🚪 ออกจากระบบ (Sign Out)</span>
+              </button>
+            )}
+
             {!isStandalonePage && (
               <button
                 type="button"

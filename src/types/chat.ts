@@ -12,30 +12,31 @@
 export type ColorTheme = 'black' | 'orange' | 'blue' | 'pink';
 export type TextSize = 'S' | 'M' | 'L' | 'XL';
 
-export type AccountType = 'SYSTEM_ADMIN' | 'OWNER_ADMIN' | 'MEMBER';
-export type AccessLevel = 'FULL_ACCESS' | 'VIEW_ALL' | 'USER';
+export type AccountType = 'SYSTEM_ADMIN' | 'MEMBER' | 'OWNER_ADMIN';
+export type AccessLevel = 'ADMIN_ONLY' | 'FULL_ACCESS' | 'VIEW_ALL' | 'USER';
 
 export interface User {
-  id: string;              // maps to users.id VARCHAR(50)
-  firstName: string;       // maps to users.first_name VARCHAR(50) (Required)
-  lastName: string;        // maps to users.last_name VARCHAR(50) (Required)
-  name: string;            // maps to users.full_name VARCHAR(100)
-  username: string;        // maps to users.username VARCHAR(50) UNIQUE (Editable by Admins / Full Access)
+  id: string;              // maps to users.id UUID
+  firstName: string;       // maps to users.first_name VARCHAR(100) (Required)
+  lastName: string;        // maps to users.last_name VARCHAR(100) (Required)
+  name: string;            // maps to users.first_name + ' ' + users.last_name
+  username: string;        // maps to users.username VARCHAR(64) UNIQUE
   password?: string;       // maps to users.password_hash TEXT
-  jobTitle?: string;       // maps to users.job_title VARCHAR(100) (Optional)
+  jobTitle?: string;       // maps to users.job_title VARCHAR(150) (Optional)
   role?: string;           // alias / fallback for jobTitle
-  initials: string;        // calculated or users.initials VARCHAR(4)
-  avatarColor: ColorTheme; // maps to users.avatar_color VARCHAR(20)
+  initials: string;        // calculated initials
+  avatarColor: ColorTheme; // maps to users.avatar_color VARCHAR(32)
   avatarUrl?: string;      // maps to users.avatar_url TEXT
-  phone?: string;          // maps to users.phone VARCHAR(20)
+  phone?: string;          // maps to users.phone VARCHAR(50)
   age?: number | string;   // maps to users.age INT
-  bio?: string;            // maps to users.bio TEXT (Optional details/bio)
+  bio?: string;            // maps to users.bio TEXT
   details?: string;        // alias for bio
   status: 'online' | 'offline' | 'away';
   lastSeen?: string;
-  accountType: AccountType;// 'SYSTEM_ADMIN' | 'OWNER_ADMIN' | 'MEMBER'
-  accessLevel: AccessLevel;// 'FULL_ACCESS' | 'VIEW_ALL' | 'USER'
-  canChat: boolean;        // strictly false for SYSTEM_ADMIN; true for OWNER_ADMIN and MEMBER
+  accountType: AccountType;// 'SYSTEM_ADMIN' | 'MEMBER'
+  accessLevel: AccessLevel;// 'ADMIN_ONLY' | 'FULL_ACCESS' | 'VIEW_ALL' | 'USER'
+  canChat: boolean;        // strictly false for SYSTEM_ADMIN; true for others
+  isImmutableAdmin?: boolean; // true for sole system admin Hushadmin (cannot be edited or deleted)
   createdAt: string;       // ISO timestamp
 }
 
