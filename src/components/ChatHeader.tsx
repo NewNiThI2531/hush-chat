@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import type { User } from '../types/chat';
 import { Avatar } from './Avatar';
-import { Search, X, Shield, Bot, ChevronLeft, PanelLeft } from 'lucide-react';
+import { Search, X, Shield, Bot, ChevronLeft, PanelLeft, PanelRight } from 'lucide-react';
 
 interface ChatHeaderProps {
   contact: User;
+  displayedName?: string;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   onSimulateReply: () => void;
@@ -14,10 +15,13 @@ interface ChatHeaderProps {
   totalUnreadCount?: number;
   onToggleSidebar?: () => void;
   isSidebarOpen?: boolean;
+  onToggleRightSidebar?: () => void;
+  isRightSidebarOpen?: boolean;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
   contact,
+  displayedName,
   searchQuery,
   onSearchChange,
   onSimulateReply,
@@ -26,6 +30,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   onBackToContacts,
   totalUnreadCount = 0,
   onToggleSidebar,
+  onToggleRightSidebar,
+  isRightSidebarOpen,
 }) => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -98,6 +104,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <div className="flex items-center gap-2.5 min-w-0">
               <Avatar
                 initials={contact.initials}
+                avatarUrl={contact.avatarUrl}
                 color={contact.avatarColor}
                 size="md"
                 status={contact.status}
@@ -106,8 +113,13 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm sm:text-base font-bold text-[#111827] truncate">
-                    {contact.name}
+                    {displayedName || contact.name}
                   </h2>
+                  {displayedName && displayedName !== contact.name && (
+                    <span className="text-[11px] text-slate-400 font-normal truncate hidden sm:inline">
+                      ({contact.name})
+                    </span>
+                  )}
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 hidden xl:inline-block">
                     {contact.role}
                   </span>
@@ -134,10 +146,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             </div>
           </div>
 
-          {/* Center / Right: Search & Auto-clear Policy Badge */}
+          {/* Center / Right: Search & Auto-clear Policy Badge & Right Sidebar Toggle */}
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Desktop / Tablet Search Input */}
-            <div className="relative hidden sm:block w-40 md:w-56 lg:w-64">
+            <div className="relative hidden sm:block w-40 md:w-56 lg:w-60">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <Search className="w-3.5 h-3.5" />
               </div>
@@ -168,20 +180,36 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             </button>
 
             {/* 90-day retention notice pill (Desktop / Laptop) */}
-            <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium">
+            <div className="hidden 2xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium">
               <Shield className="w-3.5 h-3.5 text-slate-500" />
-              <span>Auto-clears after 3 months (90-day retention)</span>
+              <span>Auto-clears after 3 months</span>
             </div>
 
-            {/* Simulate contact reply button (Useful for instant testing without switching accounts) */}
+            {/* Simulate contact reply button */}
             <button
               onClick={onSimulateReply}
               title="จำลองให้คู่สนทนาตอบกลับทันที (สำหรับทดสอบ)"
               className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-[#0EA5E9] bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-xl transition-all"
             >
               <Bot className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Simulate Reply</span>
+              <span className="hidden sm:inline">Simulate</span>
             </button>
+
+            {/* Right Contact Detail Sidebar Toggle Button */}
+            {onToggleRightSidebar && (
+              <button
+                type="button"
+                onClick={onToggleRightSidebar}
+                title={isRightSidebarOpen ? 'ปิดแถบข้อมูลคู่สนทนา' : 'เปิดแถบข้อมูลคู่สนทนา & ตั้งค่าสีแชท'}
+                className={`p-2 rounded-xl border transition-all ${
+                  isRightSidebarOpen
+                    ? 'bg-[#111827] text-white border-[#111827]'
+                    : 'bg-white text-slate-600 border-[#E5E7EB] hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                <PanelRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </>
       )}

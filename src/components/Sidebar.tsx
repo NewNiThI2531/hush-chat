@@ -2,19 +2,21 @@ import React from 'react';
 import type { User, Message } from '../types/chat';
 import { SoundWaveLogo } from './SoundWaveLogo';
 import { Avatar } from './Avatar';
-import { Pin, ArrowLeftRight, LogOut, RotateCcw } from 'lucide-react';
+import { Pin, Settings, LogOut, RotateCcw } from 'lucide-react';
 
 interface SidebarProps {
   currentUser: User;
   allUsers: User[];
   activeContact: User;
   onSelectContact: (contact: User) => void;
-  onQuickSwitchUser: (user: User) => void;
   onLogout: () => void;
   onResetData: () => void;
+  onOpenProfileSettings: () => void;
+  onOpenVersionModal: () => void;
   pinnedMessage?: Message | null;
   getUnreadCount: (contactId: string) => number;
   getLastMessage: (contactId: string) => Message | undefined;
+  getDisplayName: (contact: User) => string;
   className?: string;
 }
 
@@ -23,24 +25,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
   allUsers,
   activeContact,
   onSelectContact,
-  onQuickSwitchUser,
   onLogout,
   onResetData,
+  onOpenProfileSettings,
+  onOpenVersionModal,
   pinnedMessage,
   getUnreadCount,
   getLastMessage,
+  getDisplayName,
   className = '',
 }) => {
   const otherContacts = allUsers.filter(u => u.id !== currentUser.id && u.id !== activeContact.id);
-  const candidateUsersToSwitch = allUsers.filter(u => u.id !== currentUser.id);
+  const activeDisplayName = getDisplayName(activeContact);
 
   return (
     <aside className={`h-full bg-white border-r border-[#E5E7EB] flex flex-col justify-between shrink-0 select-none transition-all ${className}`}>
       {/* Top Section */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Brand Header */}
+        {/* Brand Header with clickable version badge */}
         <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-          <SoundWaveLogo size="md" />
+          <SoundWaveLogo
+            size="md"
+            versionBadge="v1.0.1"
+            onVersionClick={onOpenVersionModal}
+          />
         </div>
 
         {/* Scrollable contacts section */}
@@ -57,6 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center gap-3">
                 <Avatar
                   initials={activeContact.initials}
+                  avatarUrl={activeContact.avatarUrl}
                   color={activeContact.avatarColor}
                   size="md"
                   status={activeContact.status}
@@ -65,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold text-[#111827] truncate">
-                      {activeContact.name}
+                      {activeDisplayName}
                     </h3>
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -73,7 +82,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 truncate mt-0.5">
-                    {activeContact.role}
+                    {activeDisplayName !== activeContact.name
+                      ? `${activeContact.name} • ${activeContact.role}`
+                      : activeContact.role}
                   </p>
                 </div>
               </div>
@@ -84,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Pin className="w-3.5 h-3.5 text-[#F97316] shrink-0 mt-0.5" fill="#F97316" />
                   <p className="text-xs text-slate-700 line-clamp-2 leading-relaxed">
                     <span className="font-semibold text-[#F97316]">ปักหมุด: </span>
-                    {pinnedMessage.type === 'sticker' ? 'สติกเกอร์กราฟิก' : pinnedMessage.text}
+                    {pinnedMessage.type === 'sticker' ? '3D สติกเกอร์' : pinnedMessage.text}
                   </p>
                 </div>
               ) : (
@@ -105,6 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {otherContacts.map((contact) => {
                 const unread = getUnreadCount(contact.id);
                 const lastMsg = getLastMessage(contact.id);
+                const contactDisplayName = getDisplayName(contact);
 
                 return (
                   <button
@@ -115,6 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar
                         initials={contact.initials}
+                        avatarUrl={contact.avatarUrl}
                         color={contact.avatarColor}
                         size="md"
                         status={contact.status}
@@ -122,12 +135,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-[#111827] group-hover:text-[#0EA5E9] transition-colors truncate">
-                          {contact.name}
+                          {contactDisplayName}
                         </div>
                         <div className="text-xs text-slate-500 truncate mt-0.5">
                           {lastMsg
                             ? lastMsg.type === 'sticker'
-                              ? '🎨 ส่งสติกเกอร์'
+                              ? '🎨 ส่ง 3D สติกเกอร์'
                               : lastMsg.text
                             : contact.role}
                         </div>
@@ -156,13 +169,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Bottom Area: Current User + Quick Switch + Logout */}
+      {/* Bottom Area: Unified Account Owner Profile Bar with Settings Gear & Logout */}
       <div className="p-3.5 border-t border-[#E5E7EB] bg-[#F8FAFC]">
-        {/* Current User Info */}
-        <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-[#E5E7EB] shadow-subtle mb-2.5">
+        <div className="flex items-center justify-between p-2.5 rounded-2xl bg-white border border-[#E5E7EB] shadow-subtle">
           <div className="flex items-center gap-2.5 min-w-0">
             <Avatar
               initials={currentUser.initials}
+              avatarUrl={currentUser.avatarUrl}
               color={currentUser.avatarColor}
               size="sm"
               status="online"
@@ -172,43 +185,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="text-xs font-bold text-[#111827] truncate">
                 {currentUser.name}
               </div>
-              <div className="text-[11px] text-slate-500 truncate">
-                Personal account
+              <div className="text-[11px] text-[#0EA5E9] font-medium truncate">
+                @{currentUser.username}
               </div>
             </div>
           </div>
 
-          <button
-            onClick={onLogout}
-            title="ออกจากระบบ (Sign Out)"
-            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
+          <div className="flex items-center gap-1">
+            {/* Gear Icon: Edit Profile */}
+            <button
+              type="button"
+              onClick={onOpenProfileSettings}
+              title="แก้ไขโปรไฟล์ส่วนตัว (Profile Settings ⚙️)"
+              className="p-1.5 text-slate-500 hover:text-[#0EA5E9] hover:bg-sky-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
 
-        {/* Quick Persona Switcher for testing two-way interactions */}
-        <div className="rounded-xl bg-white border border-[#E5E7EB] p-2">
-          <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold mb-1.5 px-1">
-            <span className="flex items-center gap-1">
-              <ArrowLeftRight className="w-3 h-3 text-[#0EA5E9]" />
-              <span>Persona Switcher:</span>
-            </span>
-            <span className="text-[10px] text-slate-400">คลิกสลับ</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-1">
-            {candidateUsersToSwitch.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => onQuickSwitchUser(u)}
-                title={`สลับเป็น ${u.name} (${u.role})`}
-                className="flex items-center gap-1 p-1 rounded-lg border border-slate-200 hover:border-[#0EA5E9] hover:bg-sky-50 transition-all text-left text-[11px] font-medium text-slate-700 truncate"
-              >
-                <Avatar initials={u.initials} color={u.avatarColor} size="xs" />
-                <span className="truncate">{u.name.split(' ')[0]}</span>
-              </button>
-            ))}
+            {/* Logout Button */}
+            <button
+              type="button"
+              onClick={onLogout}
+              title="ออกจากระบบ (Sign Out)"
+              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
 

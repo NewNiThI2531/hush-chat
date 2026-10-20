@@ -3,12 +3,16 @@ import React from 'react';
 interface SoundWaveLogoProps {
   size?: 'sm' | 'md' | 'lg';
   showSubtitle?: boolean;
+  versionBadge?: string;
+  onVersionClick?: () => void;
   className?: string;
 }
 
 export const SoundWaveLogo: React.FC<SoundWaveLogoProps> = ({
   size = 'md',
   showSubtitle = true,
+  versionBadge = 'v1.0.1',
+  onVersionClick,
   className = '',
 }) => {
   const iconSizes = {
@@ -45,14 +49,27 @@ export const SoundWaveLogo: React.FC<SoundWaveLogoProps> = ({
         </svg>
       </div>
 
-      <div className="flex items-baseline gap-1.5">
-        <span className={`font-extrabold tracking-tight text-[#111827] ${textSizes[size]}`}>
-          HusH
-        </span>
-        {showSubtitle && (
-          <span className="text-xs font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-            Chat
+      <div className="flex items-center gap-2">
+        <div className="flex items-baseline gap-1.5">
+          <span className={`font-extrabold tracking-tight text-[#111827] ${textSizes[size]}`}>
+            HusH
           </span>
+          {showSubtitle && (
+            <span className="text-[11px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+              Chat
+            </span>
+          )}
+        </div>
+
+        {versionBadge && (
+          <button
+            type="button"
+            onClick={onVersionClick}
+            title="คลิกเพื่อดูบันทึกเวอร์ชันและสถานะ 7-Agent Squad"
+            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-sky-50 text-[#0284C7] border border-sky-200 hover:bg-sky-100 hover:border-[#0EA5E9] transition-all cursor-pointer shadow-2xs"
+          >
+            {versionBadge}
+          </button>
         )}
       </div>
     </div>

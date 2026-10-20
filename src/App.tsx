@@ -1,16 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { User, ColorTheme, TextSize } from './types/chat';
 import { storageService } from './services/storageService';
-import { getConversationId, MOCK_USERS } from './data/mockData';
+import { getConversationId } from './data/mockData';
 import { LoginPage } from './components/LoginPage';
 import { Sidebar } from './components/Sidebar';
 import { ChatHeader } from './components/ChatHeader';
 import { PinnedMessageBanner } from './components/PinnedMessageBanner';
 import { MessageList } from './components/MessageList';
 import { ChatInput } from './components/ChatInput';
+import { RightContactDetailSidebar } from './components/RightContactDetailSidebar';
+import { SelfProfileModal } from './components/SelfProfileModal';
+import { VersionHandoffModal } from './components/VersionHandoffModal';
 import { Check } from 'lucide-react';
 
-// Web Audio API micro-sound generator for premium tactile feedback
+// Web Audio API micro-sound generator for tactile acoustic feedback
 const playHapticSound = (type: 'send' | 'receive' | 'pop') => {
   try {
     const AudioContextClass =
@@ -50,30 +53,44 @@ const playHapticSound = (type: 'send' | 'receive' | 'pop') => {
 };
 
 export function App() {
+  // Force re-render key for storage synchronization
+  const [version, setVersion] = useState(0);
+  const triggerUpdate = () => setVersion((v) => v + 1);
+
+  const allUsers = useMemo(() => {
+    return storageService.getAllUsers();
+  }, [version]);
+
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedId = storageService.getCurrentUserId();
-    return storageService.getUserById(savedId) || MOCK_USERS[0];
+    const users = storageService.getAllUsers();
+    return users.find((u) => u.id === savedId) || users[0];
   });
 
   const [activeContact, setActiveContact] = useState<User>(() => {
     const currentId = storageService.getCurrentUserId();
-    const other = MOCK_USERS.find((u) => u.id !== currentId) || MOCK_USERS[1];
+    const users = storageService.getAllUsers();
+    const other = users.find((u) => u.id !== currentId) || users[1];
     return other;
   });
 
-  // Responsive state:
+  // Responsive layout state:
   // Mobile (< 768px): single pane drill-down navigation ('contacts' or 'chat')
   const [mobileView, setMobileView] = useState<'contacts' | 'chat'>('chat');
   // Tablet (768px - 1023px): sidebar toggle state
   const [tabletSidebarOpen, setTabletSidebarOpen] = useState(true);
+  // Right contact detail sidebar toggle (open by default on desktop xl >= 1280px)
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 1280 : true;
+  });
+
+  // Modal dialog states
+  const [isSelfProfileOpen, setIsSelfProfileOpen] = useState(false);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [jumpTargetId, setJumpTargetId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Force re-render key for storage synchronization
-  const [version, setVersion] = useState(0);
-  const triggerUpdate = () => setVersion((v) => v + 1);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -105,6 +122,27 @@ export function App() {
     return conversationMessages.find((m) => m.id === pinnedMessageId) || null;
   }, [pinnedMessageId, conversationMessages]);
 
+  // Contact preferences: custom nickname & chat background color
+  const contactPref = useMemo(() => {
+    if (!currentUser) return { customNickname: undefined, chatBgColor: '#FFFFFF' };
+    return storageService.getContactPreference(currentUser.id, activeContact.id);
+  }, [currentUser, activeContact.id, version]);
+
+  const chatBgColor = contactPref.chatBgColor || '#FFFFFF';
+  const customNickname = contactPref.customNickname || '';
+
+  const getDisplayName = useCallback(
+    (contact: User) => {
+      if (!currentUser) return contact.name;
+      return storageService.getDisplayName(currentUser.id, contact);
+    },
+    [currentUser, version]
+  );
+
+  const activeContactDisplayName = useMemo(() => {
+    return getDisplayName(activeContact);
+  }, [getDisplayName, activeContact]);
+
   // Mark as read whenever activeContact changes or messages update
   useEffect(() => {
     if (currentUser && conversationId) {
@@ -116,8 +154,8 @@ export function App() {
   const handleLogin = (user: User) => {
     storageService.setCurrentUserId(user.id);
     setCurrentUser(user);
-    // Select first other contact
-    const defaultOther = MOCK_USERS.find((u) => u.id !== user.id) || MOCK_USERS[0];
+    const users = storageService.getAllUsers();
+    const defaultOther = users.find((u) => u.id !== user.id) || users[0];
     setActiveContact(defaultOther);
     setMobileView('chat');
     showToast(`เข้าสู่ระบบในชื่อ ${user.name}`);
@@ -126,19 +164,6 @@ export function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
-  };
-
-  const handleQuickSwitchUser = (targetUser: User) => {
-    if (!currentUser) return;
-    const previousUser = currentUser;
-    storageService.setCurrentUserId(targetUser.id);
-    setCurrentUser(targetUser);
-
-    // Make previous user active contact so you can test two-way chat immediately
-    setActiveContact(previousUser);
-    setMobileView('chat');
-    showToast(`สลับบัญชีเป็น ${targetUser.name}`);
-    triggerUpdate();
   };
 
   const handleSelectContact = (contact: User) => {
@@ -223,20 +248,45 @@ export function App() {
     if (!currentUser) return;
     storageService.simulateContactReply(conversationId, activeContact.id, currentUser.id);
     playHapticSound('receive');
-    showToast(`${activeContact.name} ตอบกลับข้อความแล้ว`);
+    showToast(`${activeContactDisplayName} ตอบกลับข้อความแล้ว`);
     triggerUpdate();
   };
 
   const handleResetData = () => {
     if (window.confirm('คุณต้องการรีเซ็ตข้อมูล Mockup ทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
       storageService.resetDemoData();
-      const defaultUser = MOCK_USERS[0];
+      const users = storageService.getAllUsers();
+      const defaultUser = users[0];
       setCurrentUser(defaultUser);
-      setActiveContact(MOCK_USERS[1]);
+      setActiveContact(users[1]);
       setMobileView('chat');
       showToast('รีเซ็ตข้อมูลทดสอบสำเร็จ');
       triggerUpdate();
     }
+  };
+
+  const handleUpdateSelfProfile = (updated: User) => {
+    try {
+      const saved = storageService.updateUserProfile(updated.id, updated);
+      setCurrentUser(saved);
+      showToast('บันทึกการแก้ไขโปรไฟล์สำเร็จ');
+      triggerUpdate();
+    } catch {
+      showToast('เกิดข้อผิดพลาดในการบันทึกโปรไฟล์');
+    }
+  };
+
+  const handleUpdateNickname = (nickname: string) => {
+    if (!currentUser) return;
+    storageService.setContactNickname(currentUser.id, activeContact.id, nickname);
+    showToast(nickname ? `บันทึกชื่อเล่น "${nickname}" เรียบร้อย` : 'รีเซ็ตชื่อเล่นกลับเป็นชื่อจริงแล้ว');
+    triggerUpdate();
+  };
+
+  const handleUpdateChatBgColor = (colorHex: string) => {
+    if (!currentUser) return;
+    storageService.setChatBackground(currentUser.id, activeContact.id, colorHex);
+    triggerUpdate();
   };
 
   const getUnreadCount = useCallback(
@@ -261,11 +311,10 @@ export function App() {
   // Total unread count across all contacts (for mobile back button badge)
   const totalUnreadCount = useMemo(() => {
     if (!currentUser) return 0;
-    return MOCK_USERS.filter((u) => u.id !== currentUser.id).reduce(
-      (sum, u) => sum + getUnreadCount(u.id),
-      0
-    );
-  }, [currentUser, getUnreadCount, version]);
+    return allUsers
+      .filter((u) => u.id !== currentUser.id)
+      .reduce((sum, u) => sum + getUnreadCount(u.id), 0);
+  }, [currentUser, allUsers, getUnreadCount, version]);
 
   // If not logged in, render Login Page
   if (!currentUser) {
@@ -273,7 +322,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-[100dvh] w-full bg-[#F8FAFC] overflow-hidden select-text">
+    <div className="flex h-dvh w-full bg-[#F8FAFC] overflow-hidden select-text relative">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-4 right-4 sm:top-5 sm:right-5 z-50 bg-[#111827] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-popover flex items-center gap-2 border border-slate-700 animate-slideDown">
@@ -282,33 +331,36 @@ export function App() {
         </div>
       )}
 
-      {/* 1. Left Sidebar (Adaptive single-pane on mobile, responsive split-view on iPad/Desktop) */}
+      {/* 1. Left Sidebar (w-72 / 288px on Desktop lg+, adaptive on mobile/tablet) */}
       <Sidebar
         currentUser={currentUser}
-        allUsers={MOCK_USERS}
+        allUsers={allUsers}
         activeContact={activeContact}
         onSelectContact={handleSelectContact}
-        onQuickSwitchUser={handleQuickSwitchUser}
         onLogout={handleLogout}
         onResetData={handleResetData}
+        onOpenProfileSettings={() => setIsSelfProfileOpen(true)}
+        onOpenVersionModal={() => setIsVersionModalOpen(true)}
         pinnedMessage={pinnedMessage}
         getUnreadCount={getUnreadCount}
         getLastMessage={getLastMessage}
+        getDisplayName={getDisplayName}
         className={`
           ${mobileView === 'contacts' ? 'flex w-full' : 'hidden'}
-          ${tabletSidebarOpen ? 'md:flex md:w-72 lg:w-80' : 'md:hidden lg:flex lg:w-80'}
+          ${tabletSidebarOpen ? 'md:flex md:w-72 lg:w-72' : 'md:hidden lg:flex lg:w-72'}
         `}
       />
 
-      {/* 2. Main Chat Area */}
+      {/* 2. Main Chat Area: min-w-0 flex-1 ensures wrapping without horizontal overflow */}
       <main
-        className={`flex-1 flex-col h-full bg-[#F8FAFC] overflow-hidden relative ${
+        className={`min-w-0 flex-1 flex flex-col h-full bg-[#F8FAFC] overflow-hidden relative ${
           mobileView === 'chat' ? 'flex w-full' : 'hidden md:flex'
         }`}
       >
         {/* Header */}
         <ChatHeader
           contact={activeContact}
+          displayedName={activeContactDisplayName}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onSimulateReply={handleSimulateReply}
@@ -318,6 +370,8 @@ export function App() {
           totalUnreadCount={totalUnreadCount}
           onToggleSidebar={() => setTabletSidebarOpen(!tabletSidebarOpen)}
           isSidebarOpen={tabletSidebarOpen}
+          onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+          isRightSidebarOpen={isRightSidebarOpen}
         />
 
         {/* Pinned Message Bar */}
@@ -330,7 +384,7 @@ export function App() {
           />
         )}
 
-        {/* Message List */}
+        {/* Message List with custom background theme */}
         <MessageList
           messages={conversationMessages}
           currentUser={currentUser}
@@ -340,6 +394,7 @@ export function App() {
           onTogglePin={handleTogglePin}
           searchQuery={searchQuery}
           jumpTargetId={jumpTargetId}
+          chatBgColor={chatBgColor}
         />
 
         {/* Bottom Composer & Thiings.co 3D Sticker Picker */}
@@ -348,6 +403,30 @@ export function App() {
           onSendThiingsSticker={handleSendThiingsSticker}
         />
       </main>
+
+      {/* 3. Right Sidebar — Contact Profile Detail & Chat Customization Panel */}
+      <RightContactDetailSidebar
+        contact={activeContact}
+        customNickname={customNickname}
+        chatBgColor={chatBgColor}
+        onUpdateNickname={handleUpdateNickname}
+        onUpdateChatBgColor={handleUpdateChatBgColor}
+        onClose={() => setIsRightSidebarOpen(false)}
+        isOpen={isRightSidebarOpen}
+      />
+
+      {/* Modals */}
+      <SelfProfileModal
+        currentUser={currentUser}
+        isOpen={isSelfProfileOpen}
+        onClose={() => setIsSelfProfileOpen(false)}
+        onSave={handleUpdateSelfProfile}
+      />
+
+      <VersionHandoffModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+      />
     </div>
   );
 }

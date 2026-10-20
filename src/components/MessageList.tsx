@@ -12,6 +12,7 @@ interface MessageListProps {
   onTogglePin: (messageId: string) => void;
   searchQuery?: string;
   jumpTargetId?: string | null;
+  chatBgColor?: string;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -23,9 +24,11 @@ export const MessageList: React.FC<MessageListProps> = ({
   onTogglePin,
   searchQuery = '',
   jumpTargetId,
+  chatBgColor = '#F8FAFC',
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isDarkCanvas = chatBgColor.toLowerCase() === '#18181b';
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -59,22 +62,31 @@ export const MessageList: React.FC<MessageListProps> = ({
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-2 bg-[#F8FAFC]"
+      style={{ backgroundColor: chatBgColor }}
+      className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-2 transition-colors duration-300"
     >
       {/* End-to-End Encryption Notice at top */}
       <div className="flex flex-col items-center justify-center my-4 select-none">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#E5E7EB] text-slate-500 text-xs shadow-xs">
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs shadow-xs ${
+          isDarkCanvas
+            ? 'bg-zinc-800/80 border-zinc-700 text-zinc-300'
+            : 'bg-white border-[#E5E7EB] text-slate-500'
+        }`}>
           <Lock className="w-3.5 h-3.5 text-slate-400" />
           <span>การสนทนาถูกเข้ารหัสแบบส่วนตัวระหว่างคุณและ {contact.name}</span>
         </div>
-        <div className="text-[11px] text-slate-400 mt-1.5">
+        <div className={`text-[11px] mt-1.5 ${isDarkCanvas ? 'text-zinc-500' : 'text-slate-400'}`}>
           ประวัติการสนทนาจะถูกเคลียร์อัตโนมัติเมื่อครบ 90 วัน
         </div>
       </div>
 
       {/* Date badge */}
       <div className="flex items-center justify-center my-4 select-none">
-        <div className="text-[11px] font-bold tracking-wider text-slate-500 bg-white border border-[#E5E7EB] px-3.5 py-1 rounded-full shadow-xs">
+        <div className={`text-[11px] font-bold tracking-wider px-3.5 py-1 rounded-full shadow-xs border ${
+          isDarkCanvas
+            ? 'bg-zinc-800 border-zinc-700 text-zinc-300'
+            : 'bg-white border-[#E5E7EB] text-slate-500'
+        }`}>
           Today, {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
         </div>
       </div>

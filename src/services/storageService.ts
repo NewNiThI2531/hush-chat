@@ -1,8 +1,10 @@
-import type { User, Message, ColorTheme, TextSize } from '../types/chat';
-import { MOCK_USERS, INITIAL_MESSAGES, INITIAL_PINNED } from '../data/mockData';
+import type { User, Message, ColorTheme, TextSize, ContactPreference } from '../types/chat';
+import { MOCK_USERS, INITIAL_MESSAGES, INITIAL_PINNED, INITIAL_CONTACT_PREFERENCES } from '../data/mockData';
 
 const STORAGE_KEYS = {
   CURRENT_USER_ID: 'hush_current_user_id',
+  USERS: 'hush_users_v1',
+  CONTACT_PREFERENCES: 'hush_contact_prefs_v1',
   MESSAGES: 'hush_messages_v1',
   PINNED: 'hush_pinned_v1',
   LAST_READ: 'hush_last_read_v1',
@@ -19,11 +21,159 @@ export const storageService = {
   },
 
   getAllUsers(): User[] {
-    return MOCK_USERS;
+    const raw = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(MOCK_USERS));
+      return MOCK_USERS;
+    }
+    try {
+      const parsed: User[] = JSON.parse(raw);
+      // Migrate any existing users missing firstName/lastName
+      let needsSave = false;
+      const migrated = parsed.map(u => {
+        if (!u.firstName || !u.lastName) {
+          needsSave = true;
+          const parts = (u.name || '').trim().split(' ');
+          const first = parts[0] || u.id;
+          const last = parts.slice(1).join(' ') || '';
+          return {
+            ...u,
+            firstName: u.firstName || first,
+            lastName: u.lastName || last,
+            name: `${u.firstName || first} ${u.lastName || last}`.trim(),
+            jobTitle: u.jobTitle || u.role,
+          };
+        }
+        return u;
+      });
+      if (needsSave) {
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(migrated));
+      }
+      return migrated;
+    } catch {
+      return MOCK_USERS;
+    }
   },
 
   getUserById(id: string): User | undefined {
-    return MOCK_USERS.find(u => u.id === id);
+    const users = this.getAllUsers();
+    return users.find(u => u.id === id);
+  },
+
+  updateUserProfile(userId: string, updates: Partial<User>): User {
+    const users = this.getAllUsers();
+    const index = users.findIndex(u => u.id === userId);
+    if (index === -1) {
+      throw new Error(`User ${userId} not found`);
+    }
+
+    const current = users[index];
+    const firstName = updates.firstName !== undefined ? updates.firstName.trim() : current.firstName;
+    const lastName = updates.lastName !== undefined ? updates.lastName.trim() : current.lastName;
+    const fullName = `${firstName} ${lastName}`.trim();
+    const jobTitle = updates.jobTitle !== undefined ? updates.jobTitle.trim() || undefined : current.jobTitle;
+
+    const updatedUser: User = {
+      ...current,
+      ...updates,
+      firstName,
+      lastName,
+      name: fullName,
+      jobTitle,
+      role: jobTitle || undefined,
+      initials: (firstName[0] || '' + (lastName[0] || '')).toUpperCase() || current.initials,
+    };
+
+    users[index] = updatedUser;
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return updatedUser;
+  },
+
+  // Contact preferences (Custom nickname and chat background per conversation)
+  getAllContactPreferences(): Record<string, ContactPreference> {
+    const raw = localStorage.getItem(STORAGE_KEYS.CONTACT_PREFERENCES);
+    if (!raw) {
+      const initialMap: Record<string, ContactPreference> = {};
+      Object.entries(INITIAL_CONTACT_PREFERENCES).forEach(([key, val]) => {
+        const [owner, target] = key.split('_');
+        initialMap[key] = {
+          ownerUserId: owner,
+          targetUserId: target,
+          customNickname: val.customNickname,
+          chatBgColor: val.chatBgColor || '#FFFFFF',
+          updatedAt: Date.now(),
+        };
+      });
+      localStorage.setItem(STORAGE_KEYS.CONTACT_PREFERENCES, JSON.stringify(initialMap));
+      return initialMap;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  },
+
+  getContactPreference(ownerUserId: string, targetUserId: string): ContactPreference {
+    const all = this.getAllContactPreferences();
+    const key = `${ownerUserId}_${targetUserId}`;
+    return all[key] || {
+      ownerUserId,
+      targetUserId,
+      customNickname: undefined,
+      chatBgColor: '#FFFFFF',
+    };
+  },
+
+  setContactNickname(ownerUserId: string, targetUserId: string, customNickname: string): ContactPreference {
+    const all = this.getAllContactPreferences();
+    const key = `${ownerUserId}_${targetUserId}`;
+    const trimmed = customNickname.trim();
+    const existing = all[key] || {
+      ownerUserId,
+      targetUserId,
+      chatBgColor: '#FFFFFF',
+    };
+
+    const updated: ContactPreference = {
+      ...existing,
+      customNickname: trimmed.length > 0 ? trimmed : undefined,
+      updatedAt: Date.now(),
+    };
+
+    all[key] = updated;
+    localStorage.setItem(STORAGE_KEYS.CONTACT_PREFERENCES, JSON.stringify(all));
+    return updated;
+  },
+
+  setChatBackground(ownerUserId: string, targetUserId: string, chatBgColor: string): ContactPreference {
+    const all = this.getAllContactPreferences();
+    const key = `${ownerUserId}_${targetUserId}`;
+    const existing = all[key] || {
+      ownerUserId,
+      targetUserId,
+      customNickname: undefined,
+    };
+
+    const updated: ContactPreference = {
+      ...existing,
+      chatBgColor: chatBgColor || '#FFFFFF',
+      updatedAt: Date.now(),
+    };
+
+    all[key] = updated;
+    localStorage.setItem(STORAGE_KEYS.CONTACT_PREFERENCES, JSON.stringify(all));
+    return updated;
+  },
+
+  getDisplayName(ownerUserId: string, contact: User): string {
+    const pref = this.getContactPreference(ownerUserId, contact.id);
+    return pref.customNickname?.trim() ? pref.customNickname : contact.name;
+  },
+
+  getChatBackground(ownerUserId: string, contactId: string): string {
+    const pref = this.getContactPreference(ownerUserId, contactId);
+    return pref.chatBgColor || '#FFFFFF';
   },
 
   getAllMessages(): Message[] {
@@ -139,7 +289,6 @@ export const storageService = {
 
   getUnreadCount(conversationId: string, currentUserId: string): number {
     const msgs = this.getConversationMessages(conversationId);
-    // count messages where receiver is currentUserId and status is not read
     return msgs.filter(m => m.receiverId === currentUserId && m.status !== 'read').length;
   },
 
@@ -182,6 +331,9 @@ export const storageService = {
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
     localStorage.removeItem(STORAGE_KEYS.PINNED);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
+    localStorage.removeItem(STORAGE_KEYS.USERS);
+    localStorage.removeItem(STORAGE_KEYS.CONTACT_PREFERENCES);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(MOCK_USERS));
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(INITIAL_MESSAGES));
     localStorage.setItem(STORAGE_KEYS.PINNED, JSON.stringify(INITIAL_PINNED));
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, 'alex');

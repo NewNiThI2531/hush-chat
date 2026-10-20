@@ -142,7 +142,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {/* 1. Text Formatting Popover / Bottom Sheet (T Button) */}
       {showFormatMenu && (
         <div
-          className="fixed inset-x-0 bottom-0 md:absolute md:bottom-full md:mb-2 md:left-6 md:inset-x-auto bg-white border border-[#E5E7EB] rounded-t-3xl md:rounded-2xl shadow-popover p-4 w-full md:w-80 z-40 animate-slideUp md:animate-scaleIn max-h-[80vh] overflow-y-auto"
+          className="fixed inset-x-0 bottom-0 md:absolute md:bottom-full md:mb-2 md:left-4 md:inset-x-auto bg-white border border-[#E5E7EB] rounded-t-3xl md:rounded-2xl shadow-popover p-4 w-full md:w-80 z-40 animate-slideUp md:animate-scaleIn max-h-[75dvh] md:max-h-[min(420px,calc(100dvh-180px))] overflow-y-auto"
         >
           {/* Mobile Drag Indicator */}
           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-3 md:hidden" />
@@ -224,7 +224,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {/* 2. Emoji & Thiings.co 3D Stickers Popover / Bottom Sheet (😊 Button) */}
       {showEmojiMenu && (
         <div
-          className="fixed inset-x-0 bottom-0 md:absolute md:bottom-full md:mb-2 md:left-6 md:inset-x-auto bg-white border border-[#E5E7EB] rounded-t-3xl md:rounded-2xl shadow-popover p-3.5 w-full md:w-[380px] z-40 animate-slideUp md:animate-scaleIn max-h-[85vh] md:max-h-[500px] flex flex-col"
+          className="fixed inset-x-0 bottom-0 md:absolute md:bottom-full md:mb-2 md:left-4 md:inset-x-auto bg-white border border-[#E5E7EB] rounded-t-3xl md:rounded-2xl shadow-popover p-3.5 w-full md:w-[380px] z-40 animate-slideUp md:animate-scaleIn max-h-[75dvh] md:max-h-[min(480px,calc(100dvh-180px))] flex flex-col"
         >
           {/* Mobile Drag Indicator */}
           <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-2 md:hidden" />
