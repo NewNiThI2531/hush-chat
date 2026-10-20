@@ -1,10 +1,10 @@
 # 🤝 HusH Multi-Agent Handoff Document (Session Continuity)
 
-**Target Version:** `v2.0.0` (Production Release)  
-**Git Branches:** `feat/v2.0.0-neon-production` and `main`  
+**Target Version:** `v2.0.1` (Production Clean Release)  
+**Git Branch:** `main`  
 **Production Live URL:** `https://hush-chat-omega.vercel.app`  
 **Database:** Neon Serverless PostgreSQL (`ep-muddy-hill`)  
-**Status:** ✅ **v2.0.0 Production Deployed & Verified**
+**Status:** ✅ **v2.0.1 Production Clean Deployed & Verified**
 
 ---
 
@@ -12,27 +12,27 @@
 
 This handoff document provides continuous context for any incoming developer, AI agent, or engineering team member.
 
-In **`v2.0.0`**, HusH transitioned from a client-side mockup to a **100% real Database-Backed Production Application** connected live to **Neon Serverless PostgreSQL** and deployed on **Vercel**:
+In **`v2.0.1`**, HusH underwent a strict production audit and cleanup, operating **100% exclusively on live data from Neon PostgreSQL**:
 
-1. **Mock Data Purge:**
-   - 100% of mock personas, mock conversations, and demo login switchers permanently removed.
-2. **Provisioned Relational Database Tables on Neon DB:**
-   - `users`: Separated user accounts, RBAC access levels, immutable admin protection.
-   - `conversations`: 1:1 participant pair with ordered UUID constraints (`chk_ordered_pair`).
-   - `messages`: Message stream with 90-day automated retention purge.
-   - `message_reactions`: Multi-user emoji reactions.
-   - `user_contacts`: 1:1 friend relationships, custom nicknames, per-chat background themes.
-   - `schedules`: 1:1 Apple Calendar events with automated pop-up & message dispatch.
-3. **Initial Seeded Production Accounts:**
-   - `@Hushadmin`: Protected Sole System Administrator (`SYSTEM_ADMIN`, `ADMIN_ONLY`, `can_chat: false`, routes directly to Admin Console).
-   - `@New010`: Nithi B. (Software Engineer & Co-Owner, `FULL_ACCESS`, 1:1 chat and admin access).
-   - `@Fernrs`: Fern RS (Product Specialist, `USER`, standard member, friend-by-username).
-   - Default Password: `password123`
+1. **Total Mock Data & Fallback Purge:**
+   - Deleted `src/data/mockData.ts` and all hardcoded mock arrays (`INITIAL_USERS`, `MOCK_USERS`, `DEMO_MESSAGES`, `SEED_DATA`).
+   - Browser initialization executes `purgeLegacyMockStorage()`, wiping any legacy `hush_*` mock keys from `localStorage`.
+   - Removed all mock fallback branches: conversations with 0 messages render a clean empty state.
+   - Removed hardcoded fallback passwords in favor of strict SHA-256 database authentication.
+2. **Production-Clean UI & App Shell:**
+   - Login page strictly displays Brand Logo, Title, Username input, Password input, and Sign In button (no autofills, no test credential hints, no demo badges).
+   - Removed Persona Switcher (`สลับบัญชี`) from Admin Console.
+   - Removed `Test 10s` (`⚡ ในอีก 10 วินาที`) preset from Schedule Modal.
+   - Cleaned all mock placeholders in modals.
+3. **Provisioned & Verified Relational Database State on Neon DB:**
+   - Only 3 authorized accounts in `users`:
+     - `@Hushadmin`: Protected Sole System Administrator (`Password: Admin@002452@`, `account_type = 'SYSTEM_ADMIN'`, `access_level = 'ADMIN_ONLY'`, `can_chat = FALSE`, `is_immutable_admin = TRUE`).
+     - `@New010`: Nithi B. (`Password: N!ew@14523@`, `account_type = 'MEMBER'`, `access_level = 'FULL_ACCESS'`, `can_chat = TRUE`, `is_immutable_admin = FALSE`).
+     - `@Fernrs`: Fern RS (`Password: F!ern@02020@`, `account_type = 'MEMBER'`, `access_level = 'USER'`, `can_chat = TRUE`, `is_immutable_admin = FALSE`).
+   - Cleared all fake/demo messages, message reactions, and schedules (reset to 0 rows for clean production start).
 4. **Sole Admin Immutability Protection:**
    - `@Hushadmin` is locked against modification or deletion in both the Admin Console UI and storage queries.
-5. **Ultra-Clean Login Experience:**
-   - Minimalist Username + Password form with show/hide password toggle.
-6. **Real-Time Synchronization:**
+5. **Real-Time Synchronization:**
    - Multi-device polling loop keeping messages, contacts, and schedules synchronized in real-time.
 
 ---
@@ -134,4 +134,4 @@ CREATE TABLE IF NOT EXISTS schedules (
 - **Driver:** `@neondatabase/serverless` (HTTP fetch driver over SSL)
 - **Vercel Production URL:** `https://hush-chat-omega.vercel.app`
 - **GitHub Repository:** `https://github.com/NewNiThI2531/hush-chat.git`
-- **Production Branches:** `feat/v2.0.0-neon-production` and `main`
+- **Production Branch:** `main` (Release Tag: `v2.0.1`)

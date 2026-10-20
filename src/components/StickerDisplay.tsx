@@ -1,5 +1,5 @@
 import React from 'react';
-import { MOCK_STICKERS } from '../data/mockData';
+import { SYSTEM_STICKERS } from '../data/stickers';
 import { CheckCircle2, Heart, Clock, Sparkles, BarChart3, Flame, ShieldCheck, Target } from 'lucide-react';
 
 interface StickerDisplayProps {
@@ -15,7 +15,7 @@ export const StickerDisplay: React.FC<StickerDisplayProps> = ({
   className = '',
   onClick,
 }) => {
-  const sticker = MOCK_STICKERS.find(s => s.id === stickerId) || MOCK_STICKERS[0];
+  const sticker = SYSTEM_STICKERS.find(s => s.id === stickerId) || SYSTEM_STICKERS[0];
 
   const renderIcon = (type: string, iconClass: string) => {
     switch (type) {

@@ -181,7 +181,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               <Search className="w-4 h-4" />
             </button>
 
-            {/* 1:1 Schedule & Calendar Button (Replaces 90-day pill & Simulate button) */}
+            {/* 1:1 Schedule & Calendar Button */}
             <button
               type="button"
               onClick={onOpenSchedule}

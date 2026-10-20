@@ -20,7 +20,6 @@ interface AdminConsoleModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User;
-  onSwitchUser?: (user: User) => void;
   onUsersUpdated?: () => void;
   isStandalonePage?: boolean;
   onLogout?: () => void;
@@ -30,7 +29,6 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
   isOpen,
   onClose,
   currentUser,
-  onSwitchUser,
   onUsersUpdated,
   isStandalonePage = false,
   onLogout,
@@ -426,17 +424,6 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                               title="แก้ไขชื่อผู้ใช้, สิทธิ์ และข้อมูลส่วนตัว"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          {onSwitchUser && !isCurrent && (
-                            <button
-                              type="button"
-                              onClick={() => onSwitchUser(user)}
-                              className="px-2 py-1 bg-slate-100 hover:bg-[#111827] hover:text-white text-slate-700 text-[11px] font-bold rounded-lg transition-all border border-slate-200 cursor-pointer"
-                              title="สลับไปทดสอบใช้งานในชื่อบัญชีนี้"
-                            >
-                              สลับบัญชี
                             </button>
                           )}
                         </div>

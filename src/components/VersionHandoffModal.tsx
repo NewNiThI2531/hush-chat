@@ -20,7 +20,7 @@ const AGENTS = [
     title: 'Project Manager Agent',
     name: 'Scope & Boundary Enforcer',
     status: 'Signed Off',
-    deliverables: 'Approved v2.0.0 Production: Mock personas purged, 3 real accounts seeded (Hushadmin, New010, Fernrs), immutable admin enforcement, and live Neon PostgreSQL.',
+    deliverables: 'Approved v2.0.1 Production: Total purge of legacy mock data, 3 authorized accounts verified (Hushadmin, New010, Fernrs), immutable admin enforcement, and 100% live Neon PostgreSQL.',
   },
   {
     role: 'SA',
@@ -34,7 +34,7 @@ const AGENTS = [
     title: 'UI/UX Designer Agent',
     name: 'Aesthetics & Layout Craftsman',
     status: 'Signed Off',
-    deliverables: 'Designed ultra-clean Login Page (no mock switchers), marked Hushadmin as Protected Sole Admin (Immutable) with edit disabled, and responsive Apple Calendar UI.',
+    deliverables: 'Designed ultra-clean Login Page (strictly brand + credentials only), marked Hushadmin as Protected Sole Admin (Immutable) with edit disabled, and responsive Apple Calendar UI.',
   },
   {
     role: 'DEV',
@@ -62,13 +62,13 @@ const AGENTS = [
     title: 'DevOps & Release Agent',
     name: 'Release & Deployment Manager',
     status: 'Signed Off',
-    deliverables: 'Tagged v2.0.0, pushed to feat/v2.0.0-neon-production and main for continuous automated deployment to https://hush-chat-omega.vercel.app.',
+    deliverables: 'Tagged v2.0.1, pushed directly to main for continuous automated deployment to https://hush-chat-omega.vercel.app.',
   },
 ];
 
 const NEON_SQL_SCHEMA = `-- ====================================================================
 -- HusH Relational Database Schema — Neon Serverless PostgreSQL (DDL)
--- Version: v2.0.0 (Production Release)
+-- Version: v2.0.1 (Production Clean Release)
 -- ====================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -182,10 +182,10 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-[#111827]">
-                  HusH Version 2.0 Production Release
+                  HusH Version 2.0.1 Production Clean
                 </h2>
                 <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  v2.0.0
+                  v2.0.1
                 </span>
               </div>
               <p className="text-xs text-slate-500">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { User, ColorTheme, TextSize, Schedule } from './types/chat';
 import { storageService } from './services/storageService';
-import { getConversationId } from './data/mockData';
+import { getConversationId } from './utils/chatUtils';
 import { LoginPage } from './components/LoginPage';
 import { Sidebar } from './components/Sidebar';
 import { ChatHeader } from './components/ChatHeader';
@@ -400,7 +400,6 @@ export function App() {
           isOpen={true}
           onClose={() => {}}
           currentUser={currentUser}
-          onSwitchUser={(user) => handleLogin(user)}
           onUsersUpdated={triggerUpdate}
           isStandalonePage={true}
           onLogout={handleLogout}
@@ -555,7 +554,6 @@ export function App() {
         isOpen={isAdminConsoleOpen}
         onClose={() => setIsAdminConsoleOpen(false)}
         currentUser={currentUser}
-        onSwitchUser={(user) => handleLogin(user)}
         onUsersUpdated={triggerUpdate}
       />
 

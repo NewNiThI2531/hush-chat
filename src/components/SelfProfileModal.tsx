@@ -217,7 +217,7 @@ export const SelfProfileModal: React.FC<SelfProfileModalProps> = ({
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  placeholder="เช่น Alex"
+                  placeholder="เช่น Nithi"
                   className="w-full px-3.5 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-sm font-semibold text-[#111827] focus:outline-none focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all"
                 />
               </div>

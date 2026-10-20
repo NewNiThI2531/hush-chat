@@ -648,25 +648,25 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
                   className="w-full px-3.5 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-xs sm:text-sm text-[#111827] focus:outline-none focus:border-[#111827] transition-all"
                 />
 
-                {/* Quick Presets for Instant Testing */}
+                {/* Schedule Presets */}
                 <div className="mt-2.5 pt-2 flex flex-wrap items-center gap-1.5 text-xs">
                   <span className="text-slate-400 font-semibold text-[11px] flex items-center gap-1">
-                    <Zap className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Quick Presets:</span>
+                    <Zap className="w-3.5 h-3.5 text-sky-500" />
+                    <span>Presets:</span>
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleApplyPreset(10, 'ทดสอบ 10 วินาที')}
-                    className="px-2.5 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-lg font-bold text-[11px] transition-all cursor-pointer"
+                    onClick={() => handleApplyPreset(900, 'อีก 15 นาที')}
+                    className="px-2.5 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg font-semibold text-[11px] transition-all cursor-pointer"
                   >
-                    ⚡ ในอีก 10 วินาที (Test)
+                    ⏱️ ในอีก 15 นาที
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleApplyPreset(60, 'อีก 1 นาที')}
-                    className="px-2.5 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg font-semibold text-[11px] transition-all cursor-pointer"
+                    onClick={() => handleApplyPreset(3600, 'อีก 1 ชั่วโมง')}
+                    className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-lg font-semibold text-[11px] transition-all cursor-pointer"
                   >
-                    ⏱️ ในอีก 1 นาที
+                    ⏳ ในอีก 1 ชั่วโมง
                   </button>
                   <button
                     type="button"

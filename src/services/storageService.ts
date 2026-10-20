@@ -8,7 +8,6 @@ import type {
   Schedule,
   AccessLevel,
 } from '../types/chat';
-import { SEED_USERS } from '../data/mockData';
 import { sql } from './neonClient';
 
 const STORAGE_KEYS = {
@@ -20,6 +19,40 @@ const STORAGE_KEYS = {
   REACTIONS_CACHE: 'hush_reactions_cache_v2',
   SCHEDULES_CACHE: 'hush_schedules_cache_v2',
 };
+
+// Purge all legacy mockup and demo keys from browser storage
+function purgeLegacyMockStorage(): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  const legacyKeys = [
+    'hush_users',
+    'hush_users_v1',
+    'hush_users_v1_1',
+    'hush_contact_prefs_v1',
+    'hush_user_contacts_v1',
+    'hush_messages_v1',
+    'hush_messages',
+    'hush_pinned_v1',
+    'hush_schedules_v1',
+    'hush_schedules',
+    'hush_last_read_v1',
+    'hush_current_user_id',
+    'hush_mock_users',
+  ];
+  legacyKeys.forEach((k) => localStorage.removeItem(k));
+
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('hush_mock_') || k.startsWith('hush_demo_'))) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 // Simple client-side SHA-256 generator
 async function sha256(text: string): Promise<string> {
@@ -143,7 +176,7 @@ function mapUser(row: RawDbUser): User {
 
 // In-Memory cache for 60fps synchronous UI renders
 class StorageService {
-  private usersCache: User[] = SEED_USERS;
+  private usersCache: User[] = [];
   private contactsCache: UserContact[] = [];
   private conversationsCache: RawDbConversation[] = [];
   private messagesCache: Message[] = [];
@@ -152,6 +185,7 @@ class StorageService {
   private isInitialized = false;
 
   constructor() {
+    purgeLegacyMockStorage();
     this.loadFromLocalStorage();
   }
 
@@ -175,7 +209,10 @@ class StorageService {
       const s = localStorage.getItem(STORAGE_KEYS.SCHEDULES_CACHE);
       if (s) this.schedulesCache = JSON.parse(s);
     } catch {
-      // Fallback to initial seeds
+      // Empty cache on parsing error
+      this.usersCache = [];
+      this.messagesCache = [];
+      this.schedulesCache = [];
     }
   }
 
@@ -349,11 +386,10 @@ class StorageService {
       const row = rows[0];
       const hashedInput = await sha256(passwordInput.trim());
 
-      // Validate hash or default fallback
+      // Strictly validate hash or plaintext from database
       const isMatch =
         row.password_hash === hashedInput ||
-        row.password_hash === passwordInput.trim() ||
-        passwordInput.trim() === 'password123';
+        row.password_hash === passwordInput.trim();
 
       if (!isMatch) {
         return null;
@@ -364,12 +400,6 @@ class StorageService {
       return user;
     } catch (err) {
       console.error('Neon auth error:', err);
-      // Fallback check against cached users
-      const fallback = this.usersCache.find((u) => u.username.toLowerCase() === clean);
-      if (fallback) {
-        this.setCurrentUserId(fallback.id);
-        return fallback;
-      }
       return null;
     }
   }

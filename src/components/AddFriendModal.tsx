@@ -108,7 +108,7 @@ export const AddFriendModal: React.FC<AddFriendModalProps> = ({
                   setUsernameInput(e.target.value);
                   setError('');
                 }}
-                placeholder="เช่น marcus, sophie, david"
+                placeholder="เช่น fernrs, new010"
                 required
                 autoFocus
                 className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-[#E5E7EB] rounded-xl text-xs sm:text-sm text-[#111827] placeholder-slate-400 focus:outline-none focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all"
