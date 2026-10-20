@@ -20,7 +20,7 @@ const AGENTS = [
     title: 'Project Manager Agent',
     name: 'Scope & Boundary Enforcer',
     status: 'Signed Off',
-    deliverables: 'Approved v2.0.1 Production: Total purge of legacy mock data, 3 authorized accounts verified (Hushadmin, New010, Fernrs), immutable admin enforcement, and 100% live Neon PostgreSQL.',
+    deliverables: 'Approved v2.0.0-rc.1: Total purge of legacy mock data, 3 authorized accounts verified (Hushadmin, New010, Fernrs), immutable admin enforcement, and 100% live Neon PostgreSQL on release/v2.0.0-production.',
   },
   {
     role: 'SA',
@@ -62,13 +62,13 @@ const AGENTS = [
     title: 'DevOps & Release Agent',
     name: 'Release & Deployment Manager',
     status: 'Signed Off',
-    deliverables: 'Tagged v2.0.1, pushed directly to main for continuous automated deployment to https://hush-chat-omega.vercel.app.',
+    deliverables: 'Tagged v2.0.0-rc.1, pushed strictly to release/v2.0.0-production for Vercel Preview testing before merging into main.',
   },
 ];
 
 const NEON_SQL_SCHEMA = `-- ====================================================================
 -- HusH Relational Database Schema — Neon Serverless PostgreSQL (DDL)
--- Version: v2.0.1 (Production Clean Release)
+-- Version: v2.0.0-rc.1 (Release Candidate 1 - Neon PostgreSQL)
 -- ====================================================================
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -182,10 +182,10 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-[#111827]">
-                  HusH Version 2.0.1 Production Clean
+                  HusH Version 2.0.0 (Release Candidate 1)
                 </h2>
-                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  v2.0.1
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  v2.0.0-rc.1
                 </span>
               </div>
               <p className="text-xs text-slate-500">

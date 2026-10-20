@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
           <SoundWaveLogo
             size="md"
-            versionBadge="v2.0.1"
+            versionBadge="v2.0.0-rc.1"
             onVersionClick={onOpenVersionModal}
           />
         </div>

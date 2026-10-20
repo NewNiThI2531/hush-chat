@@ -1,11 +1,12 @@
 # 🤖 HusH 7-Agent Squad Registry & Review Matrix
 
 **Project:** "HusH" — Private, Ultra-Fast Minimal Messaging Web App  
-**Target Version:** `v2.0.1` (Production Clean Release — Total Mock Purge)  
-**Git Branch:** `main`  
-**Production Live URL:** `https://hush-chat-omega.vercel.app`  
+**Target Version:** `v2.0.0-rc.1` (Clean Neon DB Build — Release Candidate 1)  
+**Previous Version (`main`):** `v1.0.1` (Interactive mockup phase)  
+**Current Pushed Branch:** `release/v2.0.0-production` (`v2.0.0-rc.1` — Clean Neon DB build, zero mock data)  
+**Next Step:** After verifying the Vercel Preview Deployment URL on `release/v2.0.0-production`, merge into `main` as `v2.0.0`.  
 **Database:** Neon Serverless PostgreSQL (`ep-muddy-hill`)  
-**Status:** ✅ **ALL 7 AGENTS SIGNED OFF FOR v2.0.1 PRODUCTION CLEAN**
+**Status:** ✅ **ALL 7 AGENTS SIGNED OFF FOR v2.0.0-rc.1 PREVIEW TESTING**
 
 ---
 
@@ -13,13 +14,13 @@
 
 | Agent Role | Title | Core Focus | Sign-Off Status |
 |---|---|---|---|
-| **📋 PM** | Project Manager Agent | 100% Mock Purge & Production Accounts Validation | ✅ Signed Off (`v2.0.1`) |
-| **🧠 SA** | System Analyst Agent | Neon PostgreSQL DDL Verification, Messages Reset & Cleanup | ✅ Signed Off (`v2.0.1`) |
-| **🎨 UI/UX** | UI & UX Designer Agent | Strict Minimalist Login & Total Removal of Demo/Test UI | ✅ Signed Off (`v2.0.1`) |
-| **💻 DEV** | Developer Agent | Neon Serverless Client, Live Sync, Zero Fallbacks & Purge Script | ✅ Signed Off (`v2.0.1`) |
-| **🧪 TestLead** | QA Test Lead Agent | SHA-256 DB Auth Validation & Zero-Message Empty State | ✅ Signed Off (`v2.0.1`) |
-| **🔍 Tester** | QA Functional & Responsive Tester | 0 Mock/Demo Codebase Grep Audit & Clean Build | ✅ Signed Off (`v2.0.1`) |
-| **🚀 DevOps** | DevOps & Release Agent | Release Tag `v2.0.1`, Main Branch Push & Vercel Verification | ✅ Signed Off (`v2.0.1`) |
+| **📋 PM** | Project Manager Agent | 100% Mock Purge & Production Accounts Validation | ✅ Signed Off (`v2.0.0-rc.1`) |
+| **🧠 SA** | System Analyst Agent | Neon PostgreSQL DDL Verification, Messages Reset & Cleanup | ✅ Signed Off (`v2.0.0-rc.1`) |
+| **🎨 UI/UX** | UI & UX Designer Agent | Strict Minimalist Login & Total Removal of Demo/Test UI | ✅ Signed Off (`v2.0.0-rc.1`) |
+| **💻 DEV** | Developer Agent | Neon Serverless Client, Live Sync, Zero Fallbacks & Purge Script | ✅ Signed Off (`v2.0.0-rc.1`) |
+| **🧪 TestLead** | QA Test Lead Agent | SHA-256 DB Auth Validation & Zero-Message Empty State | ✅ Signed Off (`v2.0.0-rc.1`) |
+| **🔍 Tester** | QA Functional & Responsive Tester | 0 Mock/Demo Codebase Grep Audit & Clean Build | ✅ Signed Off (`v2.0.0-rc.1`) |
+| **🚀 DevOps** | DevOps & Release Agent | Branch `release/v2.0.0-production`, Tag `v2.0.0-rc.1` | ✅ Signed Off (`v2.0.0-rc.1`) |
 
 ---
 
@@ -30,7 +31,7 @@
     - `@Hushadmin`: Protected Sole System Administrator (`canChat: false`, Admin Console only, Password: `Admin@002452@`).
     - `@New010`: Nithi B. (`FULL_ACCESS`, 1:1 chat and user management, Password: `N!ew@14523@`).
     - `@Fernrs`: Fern RS (`USER`, standard member, friend-by-username, Password: `F!ern@02020@`).
-- **PM Sign-Off:** ✅ *Approved for v2.0.1 production clean deployment.*
+- **PM Sign-Off:** ✅ *Approved for v2.0.0-rc.1 preview release on `release/v2.0.0-production`.*
 
 ---
 
@@ -49,8 +50,8 @@
 - **Responsibilities:**
   - Production-clean login screen: Display STRICTLY Logo + Title + Username input + Password input + Sign In button (zero demo switchers, zero autofills, zero test credential hints, zero prototype badges).
   - Production-clean main app: Removed Persona Switcher (`สลับบัญชี`) in Admin Console, removed `Test 10s` (`⚡ ในอีก 10 วินาที`) preset from Schedule Modal.
-  - Bump all version indicators to clean production version **`v2.0.1`**.
-- **UI/UX Sign-Off:** ✅ *Clean aesthetics, security locking, and production presentation approved.*
+  - Set version indicator to **`v2.0.0-rc.1`**.
+- **UI/UX Sign-Off:** ✅ *Clean aesthetics, security locking, and release candidate presentation approved.*
 
 ---
 
@@ -85,12 +86,13 @@
 
 ## 🚀 7. DevOps & Release Agent (DevOps)
 - **Responsibilities:**
-  - Bump `VERSION` to `v2.0.1`.
+  - Bump `VERSION` to `v2.0.0-rc.1`.
   - Sync `CHANGELOG.md`, `AGENTS.md`, and `HANDOFF.md`.
-  - Commit all changes, tag `v2.0.1`, and push directly to `main` on `https://github.com/NewNiThI2531/hush-chat.git`.
-  - Validate automated deployment on Vercel at `https://hush-chat-omega.vercel.app`.
+  - Commit all changes and push strictly to `release/v2.0.0-production` with tag `v2.0.0-rc.1` (do NOT touch `main`).
+  - Next step: Verify Vercel preview deployment on `release/v2.0.0-production` prior to final merge to `main`.
 - **Release Information:**
-  - **Target Version:** `v2.0.1`
-  - **Branch:** `main`
-  - **Live URL:** `https://hush-chat-omega.vercel.app`
-- **DevOps Sign-Off:** ✅ *Ready for Git push and Vercel production deployment.*
+  - **Target Version:** `v2.0.0-rc.1`
+  - **Previous Version (`main`):** `v1.0.1`
+  - **Dedicated Release Branch:** `release/v2.0.0-production`
+  - **Next Step:** Merge to `main` as `v2.0.0` after Vercel preview sign-off
+- **DevOps Sign-Off:** ✅ *Ready for Git push to `release/v2.0.0-production`.*

@@ -4,26 +4,28 @@ All notable changes to this project are documented in this file in accordance wi
 
 ---
 
-## [v2.0.1] — 2026-10-20 (Branch: `main`)
+## [v2.0.0-rc.1] — 2026-10-20 (Branch: `release/v2.0.0-production`)
 
-### 🧹 Total Purge of Mockup Data, Demo UI & Local Fallbacks (100% Live Neon DB Only)
-- **Deleted All Mock Data & Fallback Seed Logic:**
-  - Permanently removed `src/data/mockData.ts` and all mock arrays (`INITIAL_USERS`, `MOCK_USERS`, `DEMO_MESSAGES`, `SEED_DATA`).
-  - Added automatic legacy storage purge (`purgeLegacyMockStorage()`) to clean any cached `hush_mock_*` and `hush_*` mockup keys from client browsers on app startup.
-  - Eliminated offline mock fallback logic so 0 messages render a clean empty conversation state.
-  - Removed default password fallbacks (`password123`) in favor of strict SHA-256 database verification.
-- **Production-Clean Login & App Shell:**
-  - Login page strictly displays Brand Logo, Title, Username input, Password input, and Sign In button (100% purged autofill cards, demo credential hints, and mockup badges).
-  - Cleaned all Demo/Test indicators: removed Persona Switcher (`สลับบัญชี`) from Admin Console, removed `Test 10s` (`⚡ ในอีก 10 วินาที`) preset from Schedule Modal.
-  - Cleaned placeholders in `AddFriendModal` and `SelfProfileModal` to remove mock references.
-  - Updated all version indicators to clean production version **`v2.0.1`**.
-- **Live Neon PostgreSQL Verified State:**
-  - Cleaned and verified the database directly at `NEON_DATABASE_URL`:
-    1. **`@Hushadmin`**: `Hush Administrator` (`account_type = 'SYSTEM_ADMIN'`, `access_level = 'ADMIN_ONLY'`, `can_chat = FALSE`, `is_immutable_admin = TRUE`, Password: `Admin@002452@`).
-    2. **`@New010`**: `Nithi` (`account_type = 'MEMBER'`, `access_level = 'FULL_ACCESS'`, `can_chat = TRUE`, `is_immutable_admin = FALSE`, Password: `N!ew@14523@`).
-    3. **`@Fernrs`**: `Rungfa` (`account_type = 'MEMBER'`, `access_level = 'USER'`, `can_chat = TRUE`, `is_immutable_admin = FALSE`, Password: `F!ern@02020@`).
-  - Cleared all fake/demo messages, reactions, and schedules so conversations start clean with real user messages only.
-  - Verified 100% live database queries across Auth, Admin Console, Add Friend, Nicknames, Chat Background, Messages, Reactions, and Schedules.
+### 🚀 Release Candidate 1: Clean Neon DB Build (Zero Mock Data for Preview Testing)
+- **Git & Release Context:**
+  - **Previous Version (`main`):** `v1.0.1` (Interactive mockup phase)
+  - **Current Pushed Branch:** `release/v2.0.0-production` (`v2.0.0-rc.1` — Clean Neon DB build, zero mock data)
+  - **Next Step:** After verifying the Vercel Preview Deployment URL on `release/v2.0.0-production`, merge into `main` as `v2.0.0`.
+- **100% Mock Purge & Real Neon PostgreSQL Integration:**
+  - Deleted `src/data/mockData.ts` and all mock arrays (`INITIAL_USERS`, `MOCK_USERS`, `DEMO_MESSAGES`, `SEED_DATA`).
+  - Added `purgeLegacyMockStorage()` running on application initialization to clean legacy browser `localStorage` mock keys.
+  - Eliminated mock fallbacks so empty database conversations render a clean empty message state.
+  - Removed fallback passwords in favor of strict SHA-256 database authentication.
+- **Production-Clean UI:**
+  - Minimalist Login screen: Brand logo + Title + Username + Password + Sign In button strictly.
+  - Purged persona switcher (`สลับบัญชี`) from Admin Console and `Test 10s` (`⚡ ในอีก 10 วินาที`) preset from Schedule Modal.
+  - Cleaned all mock placeholders across modals (`AddFriendModal`, `SelfProfileModal`).
+- **Live Database State on Neon PostgreSQL:**
+  - Seeded and verified only the 3 authorized production accounts:
+    1. **`@Hushadmin`**: `Hush Administrator` (`account_type: SYSTEM_ADMIN`, `access_level: ADMIN_ONLY`, `can_chat: false`, `is_immutable_admin: true`, Password: `Admin@002452@`).
+    2. **`@New010`**: `Nithi` (`account_type: MEMBER`, `access_level: FULL_ACCESS`, `can_chat: true`, `is_immutable_admin: false`, Password: `N!ew@14523@`).
+    3. **`@Fernrs`**: `Rungfa` (`account_type: MEMBER`, `access_level: USER`, `can_chat: true`, `is_immutable_admin: false`, Password: `F!ern@02020@`).
+  - Reset `messages`, `message_reactions`, and `schedules` to 0 rows.
 
 ---
 

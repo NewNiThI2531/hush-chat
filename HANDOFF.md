@@ -1,10 +1,11 @@
 # 🤝 HusH Multi-Agent Handoff Document (Session Continuity)
 
-**Target Version:** `v2.0.1` (Production Clean Release)  
-**Git Branch:** `main`  
-**Production Live URL:** `https://hush-chat-omega.vercel.app`  
+**Target Version:** `v2.0.0-rc.1` (Release Candidate 1 — Clean Neon DB Build)  
+**Previous Version (`main`):** `v1.0.1` (Interactive mockup phase)  
+**Current Pushed Branch:** `release/v2.0.0-production` (`v2.0.0-rc.1` — Clean Neon DB build, zero mock data)  
+**Next Step:** After verifying the Vercel Preview Deployment URL on `release/v2.0.0-production`, merge into `main` as `v2.0.0`.  
 **Database:** Neon Serverless PostgreSQL (`ep-muddy-hill`)  
-**Status:** ✅ **v2.0.1 Production Clean Deployed & Verified**
+**Status:** ✅ **v2.0.0-rc.1 Ready for Vercel Preview Testing on `release/v2.0.0-production`**
 
 ---
 
@@ -12,7 +13,7 @@
 
 This handoff document provides continuous context for any incoming developer, AI agent, or engineering team member.
 
-In **`v2.0.1`**, HusH underwent a strict production audit and cleanup, operating **100% exclusively on live data from Neon PostgreSQL**:
+In **`v2.0.0-rc.1`**, HusH packages a clean Neon DB build strictly to **`release/v2.0.0-production`** for Vercel Preview testing, with all Mockup and Demo data eradicated:
 
 1. **Total Mock Data & Fallback Purge:**
    - Deleted `src/data/mockData.ts` and all hardcoded mock arrays (`INITIAL_USERS`, `MOCK_USERS`, `DEMO_MESSAGES`, `SEED_DATA`).
@@ -133,5 +134,5 @@ CREATE TABLE IF NOT EXISTS schedules (
 - **Neon Database:** Serverless PostgreSQL pooler on AWS us-east-2
 - **Driver:** `@neondatabase/serverless` (HTTP fetch driver over SSL)
 - **Vercel Production URL:** `https://hush-chat-omega.vercel.app`
-- **GitHub Repository:** `https://github.com/NewNiThI2531/hush-chat.git`
-- **Production Branch:** `main` (Release Tag: `v2.0.1`)
+- **Dedicated Release Branch:** `release/v2.0.0-production` (Release Tag: `v2.0.0-rc.1`)
+- **Next Step:** After verifying the Vercel Preview Deployment URL on `release/v2.0.0-production`, merge into `main` as `v2.0.0`.
