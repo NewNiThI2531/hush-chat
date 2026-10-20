@@ -1,12 +1,14 @@
-import type { User, Message, ColorTheme, TextSize, ContactPreference } from '../types/chat';
-import { MOCK_USERS, INITIAL_MESSAGES, INITIAL_PINNED, INITIAL_CONTACT_PREFERENCES } from '../data/mockData';
+import type { User, Message, ColorTheme, TextSize, ContactPreference, UserContact, Schedule, AccessLevel } from '../types/chat';
+import { MOCK_USERS, INITIAL_MESSAGES, INITIAL_PINNED, INITIAL_CONTACT_PREFERENCES, INITIAL_USER_CONTACTS, INITIAL_SCHEDULES } from '../data/mockData';
 
 const STORAGE_KEYS = {
   CURRENT_USER_ID: 'hush_current_user_id',
-  USERS: 'hush_users_v1',
+  USERS: 'hush_users_v1_1',
   CONTACT_PREFERENCES: 'hush_contact_prefs_v1',
+  USER_CONTACTS: 'hush_user_contacts_v1',
   MESSAGES: 'hush_messages_v1',
   PINNED: 'hush_pinned_v1',
+  SCHEDULES: 'hush_schedules_v1',
   LAST_READ: 'hush_last_read_v1',
 };
 
@@ -21,36 +23,89 @@ export const storageService = {
   },
 
   getAllUsers(): User[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.USERS);
+    let raw = localStorage.getItem(STORAGE_KEYS.USERS);
+    // Backward compatibility: migrate from v1 if v1_1 is not initialized
+    if (!raw) {
+      const v1Raw = localStorage.getItem('hush_users_v1');
+      if (v1Raw) {
+        raw = v1Raw;
+      }
+    }
+
     if (!raw) {
       localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(MOCK_USERS));
       return MOCK_USERS;
     }
+
     try {
       const parsed: User[] = JSON.parse(raw);
-      // Migrate any existing users missing firstName/lastName
       let needsSave = false;
-      const migrated = parsed.map(u => {
-        if (!u.firstName || !u.lastName) {
+
+      // Ensure system accounts exist
+      const hasAdmin = parsed.some(u => u.id === 'admin' || u.accountType === 'SYSTEM_ADMIN');
+      const hasAlex = parsed.some(u => u.id === 'alex');
+      let combined = [...parsed];
+
+      if (!hasAdmin) {
+        const adminUser = MOCK_USERS.find(u => u.id === 'admin');
+        if (adminUser) {
+          combined.unshift(adminUser);
           needsSave = true;
-          const parts = (u.name || '').trim().split(' ');
-          const first = parts[0] || u.id;
-          const last = parts.slice(1).join(' ') || '';
-          return {
-            ...u,
-            firstName: u.firstName || first,
-            lastName: u.lastName || last,
-            name: `${u.firstName || first} ${u.lastName || last}`.trim(),
-            jobTitle: u.jobTitle || u.role,
-          };
         }
-        return u;
+      }
+
+      if (!hasAlex) {
+        const alexUser = MOCK_USERS.find(u => u.id === 'alex');
+        if (alexUser) {
+          combined.push(alexUser);
+          needsSave = true;
+        }
+      }
+
+      const migrated: User[] = combined.map(u => {
+        const parts = (u.name || '').trim().split(' ');
+        const first = u.firstName || parts[0] || u.id;
+        const last = u.lastName || parts.slice(1).join(' ') || '';
+
+        const accountType = u.accountType || (u.id === 'admin' ? 'SYSTEM_ADMIN' : (u.id === 'alex' ? 'OWNER_ADMIN' : 'MEMBER'));
+        const accessLevel = u.accessLevel || (accountType === 'SYSTEM_ADMIN' || accountType === 'OWNER_ADMIN' ? 'FULL_ACCESS' : (u.id === 'marcus' || u.id === 'sophie' ? 'VIEW_ALL' : 'USER'));
+        const canChat = u.canChat !== undefined ? u.canChat : accountType !== 'SYSTEM_ADMIN';
+        const password = u.password || 'password123';
+        const createdAt = u.createdAt || '2026-10-01T00:00:00.000Z';
+
+        if (
+          !u.firstName ||
+          !u.lastName ||
+          !u.accountType ||
+          !u.accessLevel ||
+          u.canChat === undefined ||
+          !u.password ||
+          !u.createdAt
+        ) {
+          needsSave = true;
+        }
+
+        return {
+          ...u,
+          firstName: first,
+          lastName: last,
+          name: `${first} ${last}`.trim(),
+          jobTitle: u.jobTitle || u.role,
+          role: u.jobTitle || u.role,
+          accountType,
+          accessLevel,
+          canChat,
+          password,
+          createdAt,
+        };
       });
+
       if (needsSave) {
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(migrated));
       }
       return migrated;
     } catch {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(MOCK_USERS));
       return MOCK_USERS;
     }
   },
@@ -58,6 +113,71 @@ export const storageService = {
   getUserById(id: string): User | undefined {
     const users = this.getAllUsers();
     return users.find(u => u.id === id);
+  },
+
+  getUserByUsername(username: string): User | undefined {
+    const clean = username.trim().replace(/^@/, '').toLowerCase();
+    const users = this.getAllUsers();
+    return users.find(u => u.username.toLowerCase() === clean);
+  },
+
+  createUser(params: {
+    username: string;
+    password?: string;
+    firstName: string;
+    lastName: string;
+    jobTitle?: string;
+    bio?: string;
+    phone?: string;
+    age?: number | string;
+    avatarColor?: ColorTheme;
+    avatarUrl?: string;
+    accessLevel: AccessLevel;
+  }): User {
+    const cleanUsername = params.username.trim().replace(/^@/, '').toLowerCase();
+    if (!cleanUsername) {
+      throw new Error('กรุณาระบุ Username');
+    }
+
+    const users = this.getAllUsers();
+    if (users.some(u => u.username.toLowerCase() === cleanUsername)) {
+      throw new Error(`Username @${cleanUsername} ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น`);
+    }
+
+    const first = params.firstName.trim();
+    const last = params.lastName.trim();
+    if (!first || !last) {
+      throw new Error('กรุณาระบุทั้งชื่อจริงและนามสกุล');
+    }
+
+    const id = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const initials = (first[0] + (last[0] || '')).toUpperCase();
+    const newUser: User = {
+      id,
+      username: cleanUsername,
+      password: params.password?.trim() || 'password123',
+      firstName: first,
+      lastName: last,
+      name: `${first} ${last}`.trim(),
+      jobTitle: params.jobTitle?.trim() || undefined,
+      role: params.jobTitle?.trim() || undefined,
+      bio: params.bio?.trim() || undefined,
+      details: params.bio?.trim() || undefined,
+      phone: params.phone?.trim() || undefined,
+      age: params.age || undefined,
+      avatarColor: params.avatarColor || 'blue',
+      avatarUrl: params.avatarUrl || undefined,
+      initials,
+      status: 'offline',
+      accountType: 'MEMBER',
+      accessLevel: params.accessLevel || 'USER',
+      canChat: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    users.push(newUser);
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return newUser;
   },
 
   updateUserProfile(userId: string, updates: Partial<User>): User {
@@ -68,6 +188,19 @@ export const storageService = {
     }
 
     const current = users[index];
+    
+    // Check username uniqueness if changed
+    if (updates.username) {
+      const cleanNewUsername = updates.username.trim().replace(/^@/, '').toLowerCase();
+      if (cleanNewUsername !== current.username.toLowerCase()) {
+        const conflict = users.some(u => u.id !== userId && u.username.toLowerCase() === cleanNewUsername);
+        if (conflict) {
+          throw new Error(`Username @${cleanNewUsername} ถูกใช้งานแล้ว`);
+        }
+        updates.username = cleanNewUsername;
+      }
+    }
+
     const firstName = updates.firstName !== undefined ? updates.firstName.trim() : current.firstName;
     const lastName = updates.lastName !== undefined ? updates.lastName.trim() : current.lastName;
     const fullName = `${firstName} ${lastName}`.trim();
@@ -81,7 +214,7 @@ export const storageService = {
       name: fullName,
       jobTitle,
       role: jobTitle || undefined,
-      initials: (firstName[0] || '' + (lastName[0] || '')).toUpperCase() || current.initials,
+      initials: ((firstName[0] || '') + (lastName[0] || '')).toUpperCase() || current.initials,
     };
 
     users[index] = updatedUser;
@@ -89,7 +222,207 @@ export const storageService = {
     return updatedUser;
   },
 
-  // Contact preferences (Custom nickname and chat background per conversation)
+  // ----------------------------------------------------
+  // User Contacts & Friendships (1:1 Friend Directory)
+  // ----------------------------------------------------
+  getAllUserContacts(): UserContact[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.USER_CONTACTS);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.USER_CONTACTS, JSON.stringify(INITIAL_USER_CONTACTS));
+      return INITIAL_USER_CONTACTS;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return INITIAL_USER_CONTACTS;
+    }
+  },
+
+  // Returns list of users that currentUser is permitted to see / chat with based on RBAC
+  getVisibleContactsForUser(currentUser: User): User[] {
+    // 1. SYSTEM_ADMIN cannot chat with anyone
+    if (!currentUser.canChat || currentUser.accountType === 'SYSTEM_ADMIN') {
+      return [];
+    }
+
+    const allUsers = this.getAllUsers();
+    // Eligible chat targets (exclude SYSTEM_ADMIN and self)
+    const chatEligible = allUsers.filter(u => u.canChat && u.id !== currentUser.id && u.accountType !== 'SYSTEM_ADMIN');
+
+    // 2. OWNER_ADMIN, FULL_ACCESS, or VIEW_ALL see all eligible chat members
+    if (
+      currentUser.accountType === 'OWNER_ADMIN' ||
+      currentUser.accessLevel === 'FULL_ACCESS' ||
+      currentUser.accessLevel === 'VIEW_ALL'
+    ) {
+      return chatEligible;
+    }
+
+    // 3. Standard 'USER' tier only sees contacts added as friends or who have active conversations
+    const userContacts = this.getAllUserContacts();
+    const friendContactIds = new Set(
+      userContacts
+        .filter(c => c.ownerUserId === currentUser.id)
+        .map(c => c.contactUserId)
+    );
+
+    // Also include anyone who has sent a message or received a message in 1:1 conversation
+    const messages = this.getAllMessages();
+    messages.forEach(m => {
+      if (m.senderId === currentUser.id) {
+        friendContactIds.add(m.receiverId);
+      } else if (m.receiverId === currentUser.id) {
+        friendContactIds.add(m.senderId);
+      }
+    });
+
+    return chatEligible.filter(u => friendContactIds.has(u.id));
+  },
+
+  addContactByUsername(ownerUserId: string, rawUsername: string): { user: User; contact: UserContact } {
+    const clean = rawUsername.trim().replace(/^@/, '').toLowerCase();
+    if (!clean) {
+      throw new Error('กรุณาระบุชื่อผู้ใช้งาน (@username)');
+    }
+
+    const allUsers = this.getAllUsers();
+    const targetUser = allUsers.find(u => u.username.toLowerCase() === clean);
+
+    if (!targetUser) {
+      throw new Error(`ไม่พบผู้ใช้งาน @${clean} ในระบบ (กรุณาตรวจสอบตัวสะกด)`);
+    }
+
+    if (targetUser.id === ownerUserId) {
+      throw new Error('ไม่สามารถเพิ่มตนเองเป็นเพื่อนได้');
+    }
+
+    if (targetUser.accountType === 'SYSTEM_ADMIN' || !targetUser.canChat) {
+      throw new Error('ไม่สามารถเพิ่มบัญชี System Administrator เป็นเพื่อนหรือเริ่มแชทได้');
+    }
+
+    const contacts = this.getAllUserContacts();
+    const existing = contacts.find(c => c.ownerUserId === ownerUserId && c.contactUserId === targetUser.id);
+    if (existing) {
+      throw new Error(`@${clean} (${targetUser.name}) อยู่ในรายชื่อผู้ติดต่อของคุณแล้ว`);
+    }
+
+    const newContact: UserContact = {
+      id: 'uc_' + Date.now(),
+      ownerUserId,
+      contactUserId: targetUser.id,
+      createdAt: new Date().toISOString(),
+    };
+
+    contacts.push(newContact);
+    localStorage.setItem(STORAGE_KEYS.USER_CONTACTS, JSON.stringify(contacts));
+
+    return { user: targetUser, contact: newContact };
+  },
+
+  // ----------------------------------------------------
+  // 1:1 Schedules & Calendar Reminders
+  // ----------------------------------------------------
+  getAllSchedules(): Schedule[] {
+    const raw = localStorage.getItem(STORAGE_KEYS.SCHEDULES);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(INITIAL_SCHEDULES));
+      return INITIAL_SCHEDULES;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return INITIAL_SCHEDULES;
+    }
+  },
+
+  getSchedulesForConversation(conversationId: string): Schedule[] {
+    const all = this.getAllSchedules();
+    return all
+      .filter(s => s.conversationId === conversationId)
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+  },
+
+  getUpcomingSchedulesCount(conversationId: string): number {
+    const schedules = this.getSchedulesForConversation(conversationId);
+    return schedules.filter(s => !s.isTriggered && new Date(s.scheduledAt).getTime() > Date.now()).length;
+  },
+
+  createSchedule(params: {
+    conversationId: string;
+    createdByUserId: string;
+    targetUserId: string;
+    title: string;
+    autoMessage: string;
+    scheduledAt: string;
+  }): Schedule {
+    if (!params.title.trim()) {
+      throw new Error('กรุณาระบุหัวข้อนัดหมาย');
+    }
+    if (!params.autoMessage.trim()) {
+      throw new Error('กรุณาระบุข้อความที่จะส่งอัตโนมัติ');
+    }
+    if (!params.scheduledAt) {
+      throw new Error('กรุณาระบุวันและเวลา');
+    }
+
+    const all = this.getAllSchedules();
+    const newSchedule: Schedule = {
+      id: 'sch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      conversationId: params.conversationId,
+      createdByUserId: params.createdByUserId,
+      targetUserId: params.targetUserId,
+      title: params.title.trim(),
+      autoMessage: params.autoMessage.trim(),
+      scheduledAt: params.scheduledAt,
+      isTriggered: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    all.push(newSchedule);
+    localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(all));
+    return newSchedule;
+  },
+
+  deleteSchedule(scheduleId: string): void {
+    const all = this.getAllSchedules();
+    const filtered = all.filter(s => s.id !== scheduleId);
+    localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(filtered));
+  },
+
+  // Real-time dispatcher: checks active schedules where scheduledAt <= now and !isTriggered
+  checkAndTriggerDueSchedules(): Schedule[] {
+    const schedules = this.getAllSchedules();
+    const now = Date.now();
+    const dueSchedules = schedules.filter(s => !s.isTriggered && new Date(s.scheduledAt).getTime() <= now);
+
+    if (dueSchedules.length === 0) {
+      return [];
+    }
+
+    // Mark as triggered and dispatch chat message
+    dueSchedules.forEach(due => {
+      due.isTriggered = true;
+
+      // Dispatch auto-chat message into the 1:1 conversation
+      this.sendMessage({
+        conversationId: due.conversationId,
+        senderId: due.createdByUserId,
+        receiverId: due.targetUserId,
+        type: 'text',
+        text: `📅 [การแจ้งเตือนตามกำหนดนัดหมาย: ${due.title}]\n\n${due.autoMessage}`,
+        textColor: 'blue',
+        textSize: 'M',
+        isScheduledDispatch: true,
+      });
+    });
+
+    localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(schedules));
+    return dueSchedules;
+  },
+
+  // ----------------------------------------------------
+  // Contact Preferences (Custom Nickname & Chat Background)
+  // ----------------------------------------------------
   getAllContactPreferences(): Record<string, ContactPreference> {
     const raw = localStorage.getItem(STORAGE_KEYS.CONTACT_PREFERENCES);
     if (!raw) {
@@ -176,6 +509,9 @@ export const storageService = {
     return pref.chatBgColor || '#FFFFFF';
   },
 
+  // ----------------------------------------------------
+  // Messages Management
+  // ----------------------------------------------------
   getAllMessages(): Message[] {
     const raw = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     if (!raw) {
@@ -205,6 +541,7 @@ export const storageService = {
     stickerName?: string;
     textColor: ColorTheme;
     textSize: TextSize;
+    isScheduledDispatch?: boolean;
   }): Message {
     const all = this.getAllMessages();
     const now = new Date();
@@ -223,6 +560,7 @@ export const storageService = {
       timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       createdAt: now.getTime(),
       status: 'sent',
+      isScheduledDispatch: params.isScheduledDispatch,
       reactions: {},
     };
 
@@ -306,34 +644,17 @@ export const storageService = {
     }
   },
 
-  simulateContactReply(conversationId: string, contactId: string, currentUserId: string): Message {
-    const sampleReplies = [
-      { text: 'รับทราบครับ! กำลังตรวจสอบข้อมูลชุดนี้ให้อยู่ครับ', color: 'blue' as ColorTheme, size: 'M' as TextSize },
-      { text: 'เห็นด้วยเลยครับ ตัวเลขตรงตามเป้าหมาย 100% เลย 🚀', color: 'black' as ColorTheme, size: 'M' as TextSize },
-      { text: 'เรียบร้อยครับ! เดี๋ยวผมจัดการส่วนถัดไปให้ทันทีครับ', color: 'orange' as ColorTheme, size: 'M' as TextSize },
-      { text: '📌 มีอะไรเพิ่มเติมแจ้งในนี้ได้ตลอดเลยนะครับ', color: 'pink' as ColorTheme, size: 'M' as TextSize },
-      { text: 'ยอดเยี่ยมมากครับ! ระบบ HusH เสถียรและเร็วมากจริงๆ', color: 'black' as ColorTheme, size: 'L' as TextSize },
-    ];
-    const picked = sampleReplies[Math.floor(Math.random() * sampleReplies.length)];
-
-    return this.sendMessage({
-      conversationId,
-      senderId: contactId,
-      receiverId: currentUserId,
-      type: 'text',
-      text: picked.text,
-      textColor: picked.color,
-      textSize: picked.size,
-    });
-  },
-
   resetDemoData(): void {
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
     localStorage.removeItem(STORAGE_KEYS.PINNED);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_USER_ID);
     localStorage.removeItem(STORAGE_KEYS.USERS);
+    localStorage.removeItem(STORAGE_KEYS.USER_CONTACTS);
+    localStorage.removeItem(STORAGE_KEYS.SCHEDULES);
     localStorage.removeItem(STORAGE_KEYS.CONTACT_PREFERENCES);
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(MOCK_USERS));
+    localStorage.setItem(STORAGE_KEYS.USER_CONTACTS, JSON.stringify(INITIAL_USER_CONTACTS));
+    localStorage.setItem(STORAGE_KEYS.SCHEDULES, JSON.stringify(INITIAL_SCHEDULES));
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(INITIAL_MESSAGES));
     localStorage.setItem(STORAGE_KEYS.PINNED, JSON.stringify(INITIAL_PINNED));
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER_ID, 'alex');

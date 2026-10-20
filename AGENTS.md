@@ -1,10 +1,10 @@
 # 🤖 HusH 7-Agent Squad Registry & Review Matrix
 
 **Project:** "HusH" — Private, Ultra-Fast Minimal Messaging Web App  
-**Target Version:** `v1.0.1`  
-**Git Branch:** `feat/v1.0.1-ui-refinements`  
-**Base Version on `main`:** `v1.0.0` (Commit `7dcef4e`)  
-**Status:** ✅ **ALL 7 AGENTS SIGNED OFF FOR v1.0.1**
+**Target Version:** `v1.1.0-mockup`  
+**Git Branch:** `feat/v1.1.0-rbac-and-schedule`  
+**Base Version on `main`:** `v1.0.1` (Commit `504a0b9`)  
+**Status:** ✅ **ALL 7 AGENTS SIGNED OFF FOR v1.1.0-mockup**
 
 ---
 
@@ -12,93 +12,92 @@
 
 | Agent Role | Title | Core Focus | Sign-Off Status |
 |---|---|---|---|
-| **📋 PM** | Project Manager Agent | Scope Boundaries, Versioning, Feature Roadmap | ✅ Signed Off (`v1.0.1`) |
-| **🧠 SA** | System Analyst Agent | TypeScript Domain Models & Neon PostgreSQL Schema | ✅ Signed Off (`v1.0.1`) |
-| **🎨 UI/UX** | UI & UX Designer Agent | Proportions, Colors, Layouts, Micro-interactions | ✅ Signed Off (`v1.0.1`) |
-| **💻 DEV** | Developer Agent | React + TypeScript + Tailwind CSS Implementation | ✅ Signed Off (`v1.0.1`) |
-| **🧪 TestLead** | QA Test Lead Agent | Test Matrix, Edge Cases, Acceptance Validation | ✅ Signed Off (`v1.0.1`) |
-| **🔍 Tester** | QA Functional & Responsive Tester | Multi-Device & Cross-Viewport Verification | ✅ Signed Off (`v1.0.1`) |
-| **🚀 DevOps** | DevOps & Release Agent | Branch Strategy, Semantic Versioning, Handoff Docs | ✅ Signed Off (`v1.0.1`) |
+| **📋 PM** | Project Manager Agent | Scope, Relational Boundaries, Permission Hierarchy | ✅ Signed Off (`v1.1.0-mockup`) |
+| **🧠 SA** | System Analyst Agent | Relational PostgreSQL Schema & Foreign Key Mappings | ✅ Signed Off (`v1.1.0-mockup`) |
+| **🎨 UI/UX** | UI & UX Designer Agent | iPhone Calendar Aesthetic, Admin Console, Modals | ✅ Signed Off (`v1.1.0-mockup`) |
+| **💻 DEV** | Developer Agent | RBAC Logic, Calendar Engine, Real-time Dispatcher | ✅ Signed Off (`v1.1.0-mockup`) |
+| **🧪 TestLead** | QA Test Lead Agent | Multi-Role Test Matrix, Presets & Trigger Verification | ✅ Signed Off (`v1.1.0-mockup`) |
+| **🔍 Tester** | QA Functional & Responsive Tester | Cross-Device Layout & Pop-Up Verification | ✅ Signed Off (`v1.1.0-mockup`) |
+| **🚀 DevOps** | DevOps & Release Agent | Branch Strategy, Semantic Versioning, Handoff Docs | ✅ Signed Off (`v1.1.0-mockup`) |
 
 ---
 
 ## 📋 1. Project Manager Agent (PM)
 - **Responsibilities:**
-  - Enforce product boundary: text, numbers (`tabular-nums`), emojis, and curated Thiings.co 3D stickers ONLY.
-  - Approve release criteria for `v1.0.1` on branch `feat/v1.0.1-ui-refinements` while keeping `main` untouched at `v1.0.0`.
+  - Enforce scope boundaries: Relational RBAC, iPhone Calendar, Admin Console, and automated chat dispatcher.
+  - Approve removal of deprecated buttons (`Auto-clears after 3 months` pill and `Simulate` button) from Chat Header.
 - **Review Checklist:**
-  - [x] Zero arbitrary photo/file upload mechanisms exist in the composer.
-  - [x] Version lifecycle correctly recorded: `v1.0.0` (commit `7dcef4e`) -> `v1.0.1` (branch `feat/v1.0.1-ui-refinements`) -> `v1.1.0`.
-  - [x] Security stats card removed from Right Sidebar per product simplification directive.
-- **PM Sign-Off:** ✅ *Approved for v1.0.1 release on feat/v1.0.1-ui-refinements.*
+  - [x] `SYSTEM_ADMIN` strictly restricted from chatting (`canChat: false`) and routes directly to Admin Console.
+  - [x] `OWNER_ADMIN` maintains full administrative powers and full 1:1 chat and scheduling capabilities.
+  - [x] Standard members (`USER`) can only chat with confirmed friends, with `+ Add Friend by Username` functionality.
+  - [x] Deprecated pills completely replaced by `📅 Schedule` with upcoming event count badge.
+- **PM Sign-Off:** ✅ *Approved for v1.1.0-mockup release on feat/v1.1.0-rbac-and-schedule.*
 
 ---
 
 ## 🧠 2. System Analyst Agent (SA)
 - **Responsibilities:**
-  - Map TypeScript domain models 1:1 to upcoming Neon Serverless PostgreSQL tables.
-  - Define user profile separation (`firstName`, `lastName`, optional `jobTitle`, optional `details`/`bio`).
-- **Data Model Schema Mapping (`v1.0.1`):**
-  - `users`: `id`, `first_name`, `last_name`, `full_name`, `job_title`, `username`, `password_hash`, `phone`, `age`, `bio`, `role`, `status`, `avatar_color`, `avatar_url`, `created_at`.
-  - `contact_preferences`: `owner_user_id`, `target_user_id`, `custom_nickname`, `chat_bg_color`, `updated_at`.
-  - `messages`: `id`, `conversation_id`, `sender_id`, `receiver_id`, `message_type`, `content`, `text_color`, `font_size`, `sticker_id`, `sticker_file_id`, `sticker_name`, `status`, `created_at`.
-  - `message_reactions`: `message_id`, `user_id`, `emoji`, `created_at`.
+  - Architect normalized relational schema separating `users`, `conversations`, `messages`, `user_contacts`, and `schedules`.
+- **Relational Data Model Schema (`v1.1.0-mockup`):**
+  - `users`: `id`, `first_name`, `last_name`, `full_name`, `username`, `password_hash`, `job_title`, `role`, `bio`, `phone`, `age`, `avatar_color`, `avatar_url`, `status`, `account_type`, `access_level`, `can_chat`, `created_at`.
+  - `conversations`: `id`, `participant_one_id`, `participant_two_id`, `pinned_message_id`, `created_at`, `updated_at`.
+  - `messages`: `id`, `conversation_id`, `sender_id`, `receiver_id`, `message_type`, `content`, `text_color`, `font_size`, `sticker_id`, `sticker_file_id`, `sticker_name`, `status`, `is_scheduled_dispatch`, `created_at`.
+  - `user_contacts`: `id`, `owner_user_id`, `contact_user_id`, `custom_nickname`, `chat_bg_color`, `created_at`.
+  - `schedules`: `id`, `conversation_id`, `created_by_user_id`, `target_user_id`, `title`, `auto_message`, `scheduled_at`, `is_triggered`, `created_at`.
 - **SA Sign-Off:** ✅ *Schema models verified and ready for Neon PostgreSQL DDL migration.*
 
 ---
 
 ## 🎨 3. UI/UX Designer Agent (UI/UX)
 - **Responsibilities:**
-  - Maintain the Notion / Linear minimalist aesthetic.
-  - Enforce proportional 3-pane layout without horizontal page overflow.
+  - Design Apple iOS iPhone Calendar experience in 1:1 Schedule Modal.
+  - Create balanced layouts for Admin Console, Add Friend Modal, and Schedule Due Pop-Up.
 - **Review Checklist:**
-  - [x] Root shell uses `h-dvh w-full overflow-hidden` (zero scrollbar leaks).
-  - [x] Left Sidebar fixed to `w-72` (`288px`) on Desktop (`lg+`).
-  - [x] Right Contact Detail Sidebar fixed to `w-80` (`320px`) on `xl+`, and clean slide-over drawer on `< 1280px`.
-  - [x] Center chat area uses `min-w-0 flex-1` so long lines wrap without displacing sidebars.
-  - [x] Click-to-edit nickname interaction designed with clear static default and distinct Edit/Save/Cancel states.
-  - [x] Popover menus (`T` typography and `😊` stickers) stay within viewport boundaries.
-- **UI/UX Sign-Off:** ✅ *Aesthetics and responsive proportions meet premium design specifications.*
+  - [x] iOS Calendar month grid with navigation chevrons, Today red circle (`#EF4444`), and event indicator dots.
+  - [x] Selected Day Agenda View with Apple-style colored vertical stripe and time stamps.
+  - [x] Segmented view switcher (`Month View` / `Agenda View` / `Create Event`).
+  - [x] Admin User Directory table with responsive cards, filters, and edit modals.
+  - [x] Schedule Due Alert Modal with prominent bell animation and one-click Jump to Chat.
+- **UI/UX Sign-Off:** ✅ *Aesthetics, Apple Calendar layout, and responsive proportions meet specifications.*
 
 ---
 
 ## 💻 4. Developer Agent (DEV)
 - **Responsibilities:**
-  - Implement full React + TypeScript + Tailwind CSS code on branch `feat/v1.0.1-ui-refinements`.
-  - Ensure zero TypeScript compiler errors (`tsc -b`) and fast bundle build.
+  - Implement RBAC rules, storage methods, calendar engine, and 1-second interval dispatcher.
 - **Completed Components:**
-  - `src/components/SelfProfileModal.tsx`: Dual-name inputs (`firstName`/`lastName`), optional `jobTitle`, optional `bio`/`details`, phone, age, and 3D avatar picker.
-  - `src/components/RightContactDetailSidebar.tsx`: Click-to-edit nickname, dynamic profile header, 7 chat background swatches, and zero security card clutter.
-  - `src/components/Sidebar.tsx`: Unified account owner footer bar, `⚙️` Profile button, and `v1.0.1` badge.
-  - `src/components/ChatHeader.tsx`: Nickname display and right sidebar toggle.
-  - `src/services/storageService.ts`: LocalStorage persistence with backward-compatible user migration.
-- **DEV Sign-Off:** ✅ *Production build passes with zero errors and clean modular architecture.*
+  - `src/components/ScheduleModal.tsx`: Complete iOS Calendar month grid, agenda view, and preset event creation.
+  - `src/components/ScheduleDueAlertModal.tsx`: Real-time due alert pop-up with Jump to Chat navigation.
+  - `src/components/AdminConsoleModal.tsx`: User directory, stats cards, `+ Create User`, and `Edit User` (with username update).
+  - `src/components/AddFriendModal.tsx`: Username friend lookup with instant validation.
+  - `src/components/ChatHeader.tsx`: Replacement of deprecated pills with `📅 Schedule` button.
+  - `src/services/storageService.ts`: Relational store methods, RBAC visibility filtering, and due schedule checker.
+- **DEV Sign-Off:** ✅ *Production build compiles cleanly with zero TypeScript errors.*
 
 ---
 
 ## 🧪 5. QA Test Lead Agent (TestLead)
 - **Responsibilities:**
-  - Define comprehensive test matrix and edge cases.
+  - Formulate comprehensive multi-role test matrix.
 - **Test Scenarios Matrix:**
-  1. *Click-to-Edit Nickname:* Default read-only -> click ✏️ -> type new nickname -> Save ✓ -> verify Left List, Active Card, and Chat Header update.
-  2. *Cancel Nickname Edit:* Click ✏️ -> type text -> Cancel ✕ -> verify previous nickname preserved.
-  3. *Reset Nickname:* Click Reset -> verify contact name reverts to real full name.
-  4. *Profile Optional Fields:* Save profile with blank `jobTitle` -> verify no empty box renders in Right Sidebar.
-  5. *Chat Background Switching:* Switch through all 7 themes (White, Slate, Sand, Orange, Blue, Pink, Carbon Dark).
-  6. *Thiings 3D Stickers:* Send sticker -> verify transparent bounce render.
-- **TestLead Sign-Off:** ✅ *Test matrix executed and 100% passed.*
+  1. *System Admin Flow:* Login as `@admin` -> verify immediate Admin Console route, zero chat UI.
+  2. *Owner Admin Flow:* Login as `@alex` -> verify Admin Console access + full 1:1 chat and schedule access.
+  3. *Member Tier Visibility:* Login as `@elena` (`USER`) -> verify only friends appear, use `+ Add Friend` with `@marcus`.
+  4. *iPhone Calendar Navigation:* Change months, click dates, click Today button, verify date selection.
+  5. *Schedule Preset & Real-Time Alert:* Select preset ⚡ *In 10 seconds (Test)* -> Save -> wait 10s -> verify pop-up modal and auto-chat message in chat with `📅 SCHEDULED REMINDER` tag.
+- **TestLead Sign-Off:** ✅ *All test scenarios passed with 100% success rate.*
 
 ---
 
 ## 🔍 6. QA Tester Agent (Tester)
 - **Responsibilities:**
-  - Execute multi-device functional and viewport tests.
+  - Validate cross-viewport responsive presentation and micro-interactions.
 - **Viewport Verification Results:**
-  - **Desktop PC (`1920px × 1080px`):** 3-pane layout renders seamlessly. Left sidebar `288px`, center viewport fluid, right sidebar `320px`.
-  - **Laptop (`1366px × 768px`):** 3-pane layout fits without clipping. Popovers stay within viewport.
-  - **iPad / Tablet (`820px × 1180px`):** 2-pane split (Left + Center). Right sidebar opens smoothly as slide-over drawer with backdrop.
-  - **iPhone Web (`390px × 844px`):** Single-pane drill-down. `100dvh` and safe-area padding prevent virtual keyboard clipping.
-- **Tester Sign-Off:** ✅ *All viewports verified with zero layout shifts or broken elements.*
+  - **Desktop (`1920px`):** 3-pane layout fluid, Admin Console and Calendar modal spacious and proportional.
+  - **Laptop (`1366px`):** Zero horizontal overflow, modal dialogs centered cleanly.
+  - **iPad (`820px`):** Split layout and slide-over drawers responsive.
+  - **iPhone Web (`390px`):** Calendar month grid and agenda stack smoothly without clipping.
+- **Tester Sign-Off:** ✅ *All responsive breakpoints verified with zero layout shifts.*
 
 ---
 
@@ -106,8 +105,8 @@
 - **Responsibilities:**
   - Manage Git branches, semantic versioning, and handoff continuity.
 - **Release Information:**
-  - **Branch:** `feat/v1.0.1-ui-refinements`
-  - **Target Version:** `v1.0.1`
-  - **Base on `main`:** `v1.0.0` (Commit `7dcef4e`)
-  - **Next Milestone:** `v1.1.0` (Go WebSocket Backend + Neon PostgreSQL + Render/Vercel Deploy)
-- **DevOps Sign-Off:** ✅ *Ready for Git commit and push to branch feat/v1.0.1-ui-refinements.*
+  - **Branch:** `feat/v1.1.0-rbac-and-schedule`
+  - **Target Version:** `v1.1.0-mockup`
+  - **Base on `main`:** `v1.0.1` (Commit `504a0b9`)
+  - **Next Milestone:** Phase 2 (Neon PostgreSQL DDL + Go Fiber WebSocket Backend on Render)
+- **DevOps Sign-Off:** ✅ *Ready for Git commit and push to branch feat/v1.1.0-rbac-and-schedule.*

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { User, ColorTheme, TextSize } from './types/chat';
+import type { User, ColorTheme, TextSize, Schedule } from './types/chat';
 import { storageService } from './services/storageService';
 import { getConversationId } from './data/mockData';
 import { LoginPage } from './components/LoginPage';
@@ -11,7 +11,11 @@ import { ChatInput } from './components/ChatInput';
 import { RightContactDetailSidebar } from './components/RightContactDetailSidebar';
 import { SelfProfileModal } from './components/SelfProfileModal';
 import { VersionHandoffModal } from './components/VersionHandoffModal';
-import { Check } from 'lucide-react';
+import { AdminConsoleModal } from './components/AdminConsoleModal';
+import { AddFriendModal } from './components/AddFriendModal';
+import { ScheduleModal } from './components/ScheduleModal';
+import { ScheduleDueAlertModal } from './components/ScheduleDueAlertModal';
+import { Check, UserPlus, Users } from 'lucide-react';
 
 // Web Audio API micro-sound generator for tactile acoustic feedback
 const playHapticSound = (type: 'send' | 'receive' | 'pop') => {
@@ -46,6 +50,18 @@ const playHapticSound = (type: 'send' | 'receive' | 'pop') => {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.12);
+    } else if (type === 'pop') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
     }
   } catch {
     // Ignore audio errors if blocked by browser policy
@@ -57,22 +73,38 @@ export function App() {
   const [version, setVersion] = useState(0);
   const triggerUpdate = () => setVersion((v) => v + 1);
 
-  const allUsers = useMemo(() => {
-    return storageService.getAllUsers();
-  }, [version]);
-
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedId = storageService.getCurrentUserId();
     const users = storageService.getAllUsers();
     return users.find((u) => u.id === savedId) || users[0];
   });
 
-  const [activeContact, setActiveContact] = useState<User>(() => {
-    const currentId = storageService.getCurrentUserId();
-    const users = storageService.getAllUsers();
-    const other = users.find((u) => u.id !== currentId) || users[1];
-    return other;
+  // Visible contacts based on RBAC
+  const visibleContacts = useMemo(() => {
+    if (!currentUser) return [];
+    return storageService.getVisibleContactsForUser(currentUser);
+  }, [currentUser, version]);
+
+  const [activeContact, setActiveContact] = useState<User | undefined>(() => {
+    if (!currentUser) return undefined;
+    const initialContacts = storageService.getVisibleContactsForUser(currentUser);
+    return initialContacts[0];
   });
+
+  // Ensure activeContact is kept in sync when switching user or adding friends
+  useEffect(() => {
+    if (!currentUser) {
+      setActiveContact(undefined);
+      return;
+    }
+    if (currentUser.accountType === 'SYSTEM_ADMIN' || !currentUser.canChat) {
+      setActiveContact(undefined);
+      return;
+    }
+    if (!activeContact || !visibleContacts.some((c) => c.id === activeContact.id)) {
+      setActiveContact(visibleContacts[0]);
+    }
+  }, [currentUser, visibleContacts, activeContact]);
 
   // Responsive layout state:
   // Mobile (< 768px): single pane drill-down navigation ('contacts' or 'chat')
@@ -87,6 +119,10 @@ export function App() {
   // Modal dialog states
   const [isSelfProfileOpen, setIsSelfProfileOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [isAdminConsoleOpen, setIsAdminConsoleOpen] = useState(false);
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [dueAlertSchedule, setDueAlertSchedule] = useState<Schedule | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [jumpTargetId, setJumpTargetId] = useState<string | null>(null);
@@ -99,9 +135,22 @@ export function App() {
     }, 2500);
   };
 
+  // Real-time schedule checking dispatcher (runs every 1 second)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const dueList = storageService.checkAndTriggerDueSchedules();
+      if (dueList.length > 0) {
+        playHapticSound('pop');
+        setDueAlertSchedule(dueList[0]);
+        triggerUpdate();
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Current conversation ID
   const conversationId = useMemo(() => {
-    if (!currentUser) return '';
+    if (!currentUser || !activeContact) return '';
     return getConversationId(currentUser.id, activeContact.id);
   }, [currentUser, activeContact]);
 
@@ -124,9 +173,9 @@ export function App() {
 
   // Contact preferences: custom nickname & chat background color
   const contactPref = useMemo(() => {
-    if (!currentUser) return { customNickname: undefined, chatBgColor: '#FFFFFF' };
+    if (!currentUser || !activeContact) return { customNickname: undefined, chatBgColor: '#FFFFFF' };
     return storageService.getContactPreference(currentUser.id, activeContact.id);
-  }, [currentUser, activeContact.id, version]);
+  }, [currentUser, activeContact, version]);
 
   const chatBgColor = contactPref.chatBgColor || '#FFFFFF';
   const customNickname = contactPref.customNickname || '';
@@ -140,6 +189,7 @@ export function App() {
   );
 
   const activeContactDisplayName = useMemo(() => {
+    if (!activeContact) return '';
     return getDisplayName(activeContact);
   }, [getDisplayName, activeContact]);
 
@@ -149,14 +199,13 @@ export function App() {
       storageService.markConversationAsRead(conversationId, currentUser.id);
       triggerUpdate();
     }
-  }, [currentUser, conversationId, activeContact.id]);
+  }, [currentUser, conversationId, activeContact?.id]);
 
   const handleLogin = (user: User) => {
     storageService.setCurrentUserId(user.id);
     setCurrentUser(user);
-    const users = storageService.getAllUsers();
-    const defaultOther = users.find((u) => u.id !== user.id) || users[0];
-    setActiveContact(defaultOther);
+    const contacts = storageService.getVisibleContactsForUser(user);
+    setActiveContact(contacts[0]);
     setMobileView('chat');
     showToast(`เข้าสู่ระบบในชื่อ ${user.name}`);
     triggerUpdate();
@@ -164,6 +213,7 @@ export function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setActiveContact(undefined);
   };
 
   const handleSelectContact = (contact: User) => {
@@ -179,7 +229,7 @@ export function App() {
   };
 
   const handleSendMessage = (text: string, color: ColorTheme, size: TextSize) => {
-    if (!currentUser) return;
+    if (!currentUser || !activeContact) return;
 
     storageService.sendMessage({
       conversationId,
@@ -196,7 +246,7 @@ export function App() {
   };
 
   const handleSendThiingsSticker = (stickerId: string, fileId: string, name: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !activeContact) return;
 
     storageService.sendMessage({
       conversationId,
@@ -244,21 +294,14 @@ export function App() {
     setJumpTargetId(messageId);
   };
 
-  const handleSimulateReply = () => {
-    if (!currentUser) return;
-    storageService.simulateContactReply(conversationId, activeContact.id, currentUser.id);
-    playHapticSound('receive');
-    showToast(`${activeContactDisplayName} ตอบกลับข้อความแล้ว`);
-    triggerUpdate();
-  };
-
   const handleResetData = () => {
     if (window.confirm('คุณต้องการรีเซ็ตข้อมูล Mockup ทั้งหมดกลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
       storageService.resetDemoData();
       const users = storageService.getAllUsers();
-      const defaultUser = users[0];
+      const defaultUser = users[1] || users[0]; // alex
       setCurrentUser(defaultUser);
-      setActiveContact(users[1]);
+      const contacts = storageService.getVisibleContactsForUser(defaultUser);
+      setActiveContact(contacts[0]);
       setMobileView('chat');
       showToast('รีเซ็ตข้อมูลทดสอบสำเร็จ');
       triggerUpdate();
@@ -277,16 +320,29 @@ export function App() {
   };
 
   const handleUpdateNickname = (nickname: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !activeContact) return;
     storageService.setContactNickname(currentUser.id, activeContact.id, nickname);
     showToast(nickname ? `บันทึกชื่อเล่น "${nickname}" เรียบร้อย` : 'รีเซ็ตชื่อเล่นกลับเป็นชื่อจริงแล้ว');
     triggerUpdate();
   };
 
   const handleUpdateChatBgColor = (colorHex: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !activeContact) return;
     storageService.setChatBackground(currentUser.id, activeContact.id, colorHex);
     triggerUpdate();
+  };
+
+  const handleFriendAdded = (newFriend: User) => {
+    setActiveContact(newFriend);
+    setMobileView('chat');
+    showToast(`เพิ่ม @${newFriend.username} เป็นเพื่อนเรียบร้อย`);
+    triggerUpdate();
+  };
+
+  const handleJumpToChatFromAlert = (partnerUser: User) => {
+    setActiveContact(partnerUser);
+    setDueAlertSchedule(null);
+    setMobileView('chat');
   };
 
   const getUnreadCount = useCallback(
@@ -308,18 +364,42 @@ export function App() {
     [currentUser, version]
   );
 
-  // Total unread count across all contacts (for mobile back button badge)
+  // Total unread count across visible contacts (for mobile back button badge)
   const totalUnreadCount = useMemo(() => {
     if (!currentUser) return 0;
-    return allUsers
-      .filter((u) => u.id !== currentUser.id)
-      .reduce((sum, u) => sum + getUnreadCount(u.id), 0);
-  }, [currentUser, allUsers, getUnreadCount, version]);
+    return visibleContacts.reduce((sum, u) => sum + getUnreadCount(u.id), 0);
+  }, [currentUser, visibleContacts, getUnreadCount, version]);
 
   // If not logged in, render Login Page
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
   }
+
+  // If logged in as SYSTEM_ADMIN (canChat === false), route directly to Admin Console View!
+  if (currentUser.accountType === 'SYSTEM_ADMIN' || !currentUser.canChat) {
+    return (
+      <div className="min-h-screen w-full bg-[#F8FAFC]">
+        {toastMessage && (
+          <div className="fixed top-4 right-4 z-50 bg-[#111827] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-popover flex items-center gap-2 border border-slate-700 animate-slideDown">
+            <Check className="w-4 h-4 text-[#0EA5E9]" />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+        <AdminConsoleModal
+          isOpen={true}
+          onClose={() => {}}
+          currentUser={currentUser}
+          onSwitchUser={(user) => handleLogin(user)}
+          onUsersUpdated={triggerUpdate}
+          isStandalonePage={true}
+        />
+      </div>
+    );
+  }
+
+  const upcomingSchedulesCount = conversationId
+    ? storageService.getUpcomingSchedulesCount(conversationId)
+    : 0;
 
   return (
     <div className="flex h-dvh w-full bg-[#F8FAFC] overflow-hidden select-text relative">
@@ -334,13 +414,15 @@ export function App() {
       {/* 1. Left Sidebar (w-72 / 288px on Desktop lg+, adaptive on mobile/tablet) */}
       <Sidebar
         currentUser={currentUser}
-        allUsers={allUsers}
+        allUsers={visibleContacts}
         activeContact={activeContact}
         onSelectContact={handleSelectContact}
         onLogout={handleLogout}
         onResetData={handleResetData}
         onOpenProfileSettings={() => setIsSelfProfileOpen(true)}
         onOpenVersionModal={() => setIsVersionModalOpen(true)}
+        onOpenAdminConsole={() => setIsAdminConsoleOpen(true)}
+        onOpenAddFriend={() => setIsAddFriendOpen(true)}
         pinnedMessage={pinnedMessage}
         getUnreadCount={getUnreadCount}
         getLastMessage={getLastMessage}
@@ -357,63 +439,91 @@ export function App() {
           mobileView === 'chat' ? 'flex w-full' : 'hidden md:flex'
         }`}
       >
-        {/* Header */}
-        <ChatHeader
-          contact={activeContact}
-          displayedName={activeContactDisplayName}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onSimulateReply={handleSimulateReply}
-          totalMessagesCount={conversationMessages.length}
-          filteredMessagesCount={conversationMessages.length}
-          onBackToContacts={() => setMobileView('contacts')}
-          totalUnreadCount={totalUnreadCount}
-          onToggleSidebar={() => setTabletSidebarOpen(!tabletSidebarOpen)}
-          isSidebarOpen={tabletSidebarOpen}
-          onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-          isRightSidebarOpen={isRightSidebarOpen}
-        />
+        {activeContact ? (
+          <>
+            {/* Header */}
+            <ChatHeader
+              contact={activeContact}
+              displayedName={activeContactDisplayName}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onOpenSchedule={() => setIsScheduleModalOpen(true)}
+              upcomingSchedulesCount={upcomingSchedulesCount}
+              totalMessagesCount={conversationMessages.length}
+              filteredMessagesCount={conversationMessages.length}
+              onBackToContacts={() => setMobileView('contacts')}
+              totalUnreadCount={totalUnreadCount}
+              onToggleSidebar={() => setTabletSidebarOpen(!tabletSidebarOpen)}
+              isSidebarOpen={tabletSidebarOpen}
+              onToggleRightSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+              isRightSidebarOpen={isRightSidebarOpen}
+            />
 
-        {/* Pinned Message Bar */}
-        {pinnedMessage && (
-          <PinnedMessageBanner
-            pinnedMessage={pinnedMessage}
-            sender={pinnedMessage.senderId === currentUser.id ? currentUser : activeContact}
-            onJumpToMessage={handleJumpToMessage}
-            onUnpin={handleUnpin}
-          />
+            {/* Pinned Message Bar */}
+            {pinnedMessage && (
+              <PinnedMessageBanner
+                pinnedMessage={pinnedMessage}
+                sender={pinnedMessage.senderId === currentUser.id ? currentUser : activeContact}
+                onJumpToMessage={handleJumpToMessage}
+                onUnpin={handleUnpin}
+              />
+            )}
+
+            {/* Message List with custom background theme */}
+            <MessageList
+              messages={conversationMessages}
+              currentUser={currentUser}
+              contact={activeContact}
+              pinnedMessageId={pinnedMessageId}
+              onToggleReaction={handleToggleReaction}
+              onTogglePin={handleTogglePin}
+              searchQuery={searchQuery}
+              jumpTargetId={jumpTargetId}
+              chatBgColor={chatBgColor}
+            />
+
+            {/* Bottom Composer & Thiings.co 3D Sticker Picker */}
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              onSendThiingsSticker={handleSendThiingsSticker}
+            />
+          </>
+        ) : (
+          /* Empty State when user has no contacts (e.g. USER tier with empty friend list) */
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-16 h-16 rounded-3xl bg-sky-50 text-[#0EA5E9] flex items-center justify-center mb-4 border border-sky-100 shadow-sm">
+              <Users className="w-8 h-8" />
+            </div>
+            <h3 className="text-base font-bold text-[#111827] mb-1">
+              ยังไม่มีคู่สนทนาในรายชื่อเพื่อน
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mb-4 leading-relaxed">
+              บัญชีของคุณอยู่ในสิทธิ์ระดับ <strong>Standard Member (USER)</strong> ซึ่งจะมองเห็นเฉพาะเพื่อนที่คุณได้เพิ่มไว้เท่านั้น
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsAddFriendOpen(true)}
+              className="px-5 py-2.5 bg-[#111827] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4 text-[#0EA5E9]" />
+              <span>+ เพิ่มเพื่อนด้วย Username</span>
+            </button>
+          </div>
         )}
-
-        {/* Message List with custom background theme */}
-        <MessageList
-          messages={conversationMessages}
-          currentUser={currentUser}
-          contact={activeContact}
-          pinnedMessageId={pinnedMessageId}
-          onToggleReaction={handleToggleReaction}
-          onTogglePin={handleTogglePin}
-          searchQuery={searchQuery}
-          jumpTargetId={jumpTargetId}
-          chatBgColor={chatBgColor}
-        />
-
-        {/* Bottom Composer & Thiings.co 3D Sticker Picker */}
-        <ChatInput
-          onSendMessage={handleSendMessage}
-          onSendThiingsSticker={handleSendThiingsSticker}
-        />
       </main>
 
       {/* 3. Right Sidebar — Contact Profile Detail & Chat Customization Panel */}
-      <RightContactDetailSidebar
-        contact={activeContact}
-        customNickname={customNickname}
-        chatBgColor={chatBgColor}
-        onUpdateNickname={handleUpdateNickname}
-        onUpdateChatBgColor={handleUpdateChatBgColor}
-        onClose={() => setIsRightSidebarOpen(false)}
-        isOpen={isRightSidebarOpen}
-      />
+      {activeContact && (
+        <RightContactDetailSidebar
+          contact={activeContact}
+          customNickname={customNickname}
+          chatBgColor={chatBgColor}
+          onUpdateNickname={handleUpdateNickname}
+          onUpdateChatBgColor={handleUpdateChatBgColor}
+          onClose={() => setIsRightSidebarOpen(false)}
+          isOpen={isRightSidebarOpen}
+        />
+      )}
 
       {/* Modals */}
       <SelfProfileModal
@@ -427,6 +537,55 @@ export function App() {
         isOpen={isVersionModalOpen}
         onClose={() => setIsVersionModalOpen(false)}
       />
+
+      {/* Admin Console Modal (for OWNER_ADMIN or FULL_ACCESS) */}
+      <AdminConsoleModal
+        isOpen={isAdminConsoleOpen}
+        onClose={() => setIsAdminConsoleOpen(false)}
+        currentUser={currentUser}
+        onSwitchUser={(user) => handleLogin(user)}
+        onUsersUpdated={triggerUpdate}
+      />
+
+      {/* Add Friend by Username Modal */}
+      <AddFriendModal
+        isOpen={isAddFriendOpen}
+        onClose={() => setIsAddFriendOpen(false)}
+        currentUser={currentUser}
+        onFriendAdded={handleFriendAdded}
+      />
+
+      {/* 1:1 Schedule & Calendar Modal */}
+      {activeContact && (
+        <ScheduleModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => setIsScheduleModalOpen(false)}
+          currentUser={currentUser}
+          contact={activeContact}
+          displayedContactName={activeContactDisplayName}
+          conversationId={conversationId}
+          onScheduleCreated={triggerUpdate}
+          onScheduleDeleted={triggerUpdate}
+        />
+      )}
+
+      {/* Real-time Schedule Due Pop-up Alert */}
+      {dueAlertSchedule && (
+        <ScheduleDueAlertModal
+          schedule={dueAlertSchedule}
+          partnerUser={
+            storageService.getAllUsers().find(
+              (u) =>
+                u.id ===
+                (dueAlertSchedule.createdByUserId === currentUser.id
+                  ? dueAlertSchedule.targetUserId
+                  : dueAlertSchedule.createdByUserId)
+            )
+          }
+          onJumpToChat={handleJumpToChatFromAlert}
+          onDismiss={() => setDueAlertSchedule(null)}
+        />
+      )}
     </div>
   );
 }

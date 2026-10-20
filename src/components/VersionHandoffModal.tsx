@@ -21,7 +21,7 @@ const AGENTS = [
     title: 'Project Manager Agent',
     name: 'Scope & Boundary Enforcer',
     status: 'Signed Off',
-    deliverables: 'Approved v1.0.1 patch: enforced click-to-edit nickname, structured profile (First/Last name), clean UI without stats card, and proportional layout on branch feat/v1.0.1-ui-refinements.',
+    deliverables: 'Approved v1.1.0-mockup: Relational RBAC, Admin Console, + Add Friend by Username, iPhone Calendar System, and automated pop-up dispatcher on branch feat/v1.1.0-rbac-and-schedule.',
   },
   {
     role: 'SA',
@@ -63,13 +63,13 @@ const AGENTS = [
     title: 'DevOps & Release Agent',
     name: 'Versioning & Release Manager',
     status: 'Signed Off',
-    deliverables: 'Managed branch feat/v1.0.1-ui-refinements, bumped to v1.0.1, updated VERSION, CHANGELOG.md, AGENTS.md, and HANDOFF.md.',
+    deliverables: 'Managed branch feat/v1.1.0-rbac-and-schedule, bumped to v1.1.0-mockup, updated VERSION, CHANGELOG.md, AGENTS.md, and HANDOFF.md with relational PostgreSQL DDL.',
   },
 ];
 
 const NEON_SQL_SCHEMA = `-- ====================================================================
--- HusH Database Schema — Neon Serverless PostgreSQL (DDL for Phase 2)
--- Version: v1.0.1 (Branch: feat/v1.0.1-ui-refinements)
+-- HusH Relational Database Schema — Neon Serverless PostgreSQL (DDL)
+-- Version: v1.1.0-mockup (Branch: feat/v1.1.0-rbac-and-schedule)
 -- ====================================================================
 
 -- 1. Users table (Admin pre-provisioned via pgcrypto)
@@ -167,10 +167,10 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
                   HusH Release & 7-Agent Squad System
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-[#0EA5E9] text-white shadow-xs">
-                  v1.0.1
+                  v1.1.0-mockup
                 </span>
                 <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                  feat/v1.0.1-ui-refinements
+                  feat/v1.1.0-rbac-and-schedule
                 </span>
               </div>
               <p className="text-xs text-slate-500">
@@ -248,10 +248,10 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
                     <h4 className="text-sm font-bold text-emerald-900">
-                      7/7 Agents Signed Off for Version v1.0.1
+                      7/7 Agents Signed Off for Version v1.1.0-mockup
                     </h4>
                     <p className="text-xs text-emerald-700">
-                      สมาชิกทั้ง 7 สายงานได้ทำการตรวจสอบและอนุมัติฟังก์ชันทั้งหมดของ v1.0.1 เรียบร้อยแล้ว
+                      สมาชิกทั้ง 7 สายงานได้ทำการตรวจสอบและอนุมัติฟังก์ชันทั้งหมดของ v1.1.0-mockup เรียบร้อยแล้ว
                     </p>
                   </div>
                 </div>
@@ -312,10 +312,10 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-slate-700">Previous Git / Deploy Version:</span>
-                      <code className="text-xs font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-300">v1.0.0 (Commit 7dcef4e on main)</code>
+                      <code className="text-xs font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-300">v1.0.1 (Commit 504a0b9 on main)</code>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      Initial interactive UI prototype release with 3-pane layout, 4-color accent, and Thiings.co 3D stickers on main.
+                      UI/UX Refinements, Click-to-Edit Nickname, and Structured Profiles merged on main.
                     </p>
                   </div>
                 </div>
@@ -329,14 +329,14 @@ export const VersionHandoffModal: React.FC<VersionHandoffModalProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-[#111827]">Current Target Version / Patch:</span>
                       <code className="text-xs font-mono font-bold bg-sky-100 text-[#0284C7] px-2 py-0.5 rounded border border-sky-300">
-                        v1.0.1
+                        v1.1.0-mockup
                       </code>
                       <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600">
-                        feat/v1.0.1-ui-refinements
+                        feat/v1.1.0-rbac-and-schedule
                       </span>
                     </div>
                     <p className="text-xs text-slate-700 mt-1 leading-relaxed">
-                      Proportional responsive layout, click-to-edit nickname interaction (Read-Only static default with Edit ✏️ → Save ✓ / Cancel ✕), structured profile fields (First/Last name split, optional jobTitle/details), and complete removal of security card.
+                      Relational Data Model, Tiered RBAC, Admin Console, Username Friend System, and iPhone-Style 1:1 Calendar with automated pop-up & chat message dispatch.
                     </p>
                   </div>
                 </div>

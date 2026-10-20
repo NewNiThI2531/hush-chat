@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import type { User } from '../types/chat';
 import { Avatar } from './Avatar';
-import { Search, X, Shield, Bot, ChevronLeft, PanelLeft, PanelRight } from 'lucide-react';
+import { Search, X, Calendar, ChevronLeft, PanelLeft, PanelRight } from 'lucide-react';
 
 interface ChatHeaderProps {
   contact: User;
   displayedName?: string;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  onSimulateReply: () => void;
+  onOpenSchedule: () => void;
+  upcomingSchedulesCount?: number;
   totalMessagesCount: number;
   filteredMessagesCount: number;
   onBackToContacts?: () => void;
@@ -24,7 +25,8 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   displayedName,
   searchQuery,
   onSearchChange,
-  onSimulateReply,
+  onOpenSchedule,
+  upcomingSchedulesCount = 0,
   totalMessagesCount,
   filteredMessagesCount,
   onBackToContacts,
@@ -179,20 +181,20 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
               <Search className="w-4 h-4" />
             </button>
 
-            {/* 90-day retention notice pill (Desktop / Laptop) */}
-            <div className="hidden 2xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium">
-              <Shield className="w-3.5 h-3.5 text-slate-500" />
-              <span>Auto-clears after 3 months</span>
-            </div>
-
-            {/* Simulate contact reply button */}
+            {/* 1:1 Schedule & Calendar Button (Replaces 90-day pill & Simulate button) */}
             <button
-              onClick={onSimulateReply}
-              title="จำลองให้คู่สนทนาตอบกลับทันที (สำหรับทดสอบ)"
-              className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-[#0EA5E9] bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-xl transition-all"
+              type="button"
+              onClick={onOpenSchedule}
+              title="เปิดตารางนัดหมาย & แจ้งเตือนข้อความอัตโนมัติ (1:1 Schedule)"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#111827] bg-[#F8FAFC] border border-[#E5E7EB] hover:border-[#111827] hover:bg-white rounded-xl transition-all shadow-2xs group cursor-pointer"
             >
-              <Bot className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Simulate</span>
+              <Calendar className="w-4 h-4 text-[#0EA5E9] group-hover:scale-105 transition-transform" />
+              <span className="hidden sm:inline">Schedule</span>
+              {upcomingSchedulesCount > 0 && (
+                <span className="min-w-[18px] h-4 px-1 rounded-full text-[10px] font-extrabold bg-[#0EA5E9] text-white flex items-center justify-center tabular-nums animate-pulse">
+                  {upcomingSchedulesCount}
+                </span>
+              )}
             </button>
 
             {/* Right Contact Detail Sidebar Toggle Button */}

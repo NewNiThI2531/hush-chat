@@ -11,7 +11,7 @@ interface SoundWaveLogoProps {
 export const SoundWaveLogo: React.FC<SoundWaveLogoProps> = ({
   size = 'md',
   showSubtitle = true,
-  versionBadge = 'v1.0.1',
+  versionBadge = 'v1.1.0-mockup',
   onVersionClick,
   className = '',
 }) => {

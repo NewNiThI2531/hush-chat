@@ -4,7 +4,43 @@ All notable changes to this project are documented in this file in accordance wi
 
 ---
 
-## [v1.0.1] — 2026-10-20 (Branch: `feat/v1.0.1-ui-refinements`)
+## [v1.1.0-mockup] — 2026-10-20 (Branch: `feat/v1.1.0-rbac-and-schedule`)
+
+### 🚀 Relational RBAC, Admin Console & iPhone 1:1 Calendar System
+- **1:1 Interactive Calendar System (iPhone Calendar App Experience):**
+  - Designed full interactive monthly calendar grid with Thai/Buddhist calendar integration, navigation chevrons, and "Today" (วันนี้) jump button.
+  - **Today Indicator:** Classic iOS red circle (`#EF4444`) with white typography.
+  - **Date Event Dots:** Dates with scheduled reminders display dedicated indicator dots (sky blue `#0EA5E9` and amber).
+  - **Selected Day Agenda View:** Dynamic schedule list for the selected date with left colored vertical stripe, time slot, auto-message preview, and dispatched badge.
+  - **Segmented View Control:** Seamless switching between `ปฏิทินรายเดือน (Month View)`, `วาระนัดหมายทั้งหมด (Agenda View)`, and `สร้างนัดหมาย (+)`.
+  - **Quick Presets:** Instant testing options (⚡ *In 10 seconds*, ⏱️ *In 1 minute*, 🌅 *Tomorrow 9:00 AM*).
+- **Real-Time Schedule Due Dispatcher & Pop-Up Alert Modal:**
+  - Automated 1-second interval checking schedules where `scheduledAt <= now` and `!isTriggered`.
+  - Automatically dispatches message into 1:1 chat with `isScheduledDispatch: true` and `📅 Scheduled Reminder` badge.
+  - Triggers prominent on-screen **1:1 Schedule Due Alert Modal** with sound haptics and "Jump to Chat" navigation.
+- **Normalized Relational Data Architecture (Neon PostgreSQL Ready):**
+  - Strictly separated tables linked by foreign keys: `users`, `conversations` (1:1 participant pair), `messages`, `user_contacts` (friendships), and `schedules`.
+- **Tiered Role-Based Access Control (RBAC):**
+  - **`SYSTEM_ADMIN` (admin):** Dedicated User & Directory Admin. Strictly forbidden from chat (`canChat: false`). Routes directly to the Admin Console upon login.
+  - **`OWNER_ADMIN` (alex):** Primary account with full admin privileges + full 1:1 chat and schedule capabilities.
+  - **`FULL_ACCESS` Member (sarah):** Can see all users, create new users, and edit permissions.
+  - **`VIEW_ALL` Member (marcus, sophie):** Can view all directory users and chat with them, but cannot manage users.
+  - **`USER` Standard Member (elena, david):** Restricted directory visibility. Only sees contacts added as friends.
+- **Username Friend System:**
+  - Added `+ Add Friend by Username` modal for standard members to find and add contacts by exact `@username`.
+- **Admin User Management Console (`Admin / Manage Users`):**
+  - Accessible for `SYSTEM_ADMIN`, `OWNER_ADMIN`, and `FULL_ACCESS` members.
+  - Overview statistics (Total Users, Admins, Full Access, View All, Standard Members).
+  - Search & filter by access level.
+  - `+ Create User` modal with `@username`, password, profile fields, and access tier selection.
+  - `Edit User` modal allowing admins to update anyone's `@username`, reset password, and modify permissions.
+- **Chat Header Cleanup:**
+  - Completely removed deprecated `Auto-clears after 3 months` pill and `Simulate` button.
+  - Replaced with clean `📅 Schedule` button displaying upcoming event count badge.
+
+---
+
+## [v1.0.1] — 2026-10-20 (Branch: `main`, Commit: `504a0b9`)
 
 ### 🛠️ UI/UX Refinements & Functional Enhancements
 - **Strict Proportional Layout & Responsive Viewports:**

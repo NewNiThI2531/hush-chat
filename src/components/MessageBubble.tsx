@@ -184,6 +184,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
           )}
 
+          {/* Scheduled Dispatch pill inside card */}
+          {message.isScheduledDispatch && (
+            <div className="flex items-center gap-1.5 px-3 pt-2 text-[10px] font-bold text-[#0284C7]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] animate-pulse"></span>
+              <span>📅 SCHEDULED REMINDER</span>
+            </div>
+          )}
+
           {/* Content: Thiings 3D Sticker vs Vector Sticker vs Text */}
           <div className="p-3">
             {message.type === 'sticker' ? (
