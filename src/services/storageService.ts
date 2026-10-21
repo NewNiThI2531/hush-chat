@@ -20,6 +20,9 @@ const STORAGE_KEYS = {
   SCHEDULES_CACHE: 'hush_schedules_cache_v2',
 };
 
+// Strict Per-Message 90-Day Rolling Retention TTL (90 days in ms)
+export const MESSAGE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+
 // Purge all legacy mockup and demo keys from browser storage
 function purgeLegacyMockStorage(): void {
   if (typeof window === 'undefined' || !window.localStorage) return;
@@ -218,6 +221,12 @@ class StorageService {
 
   private saveToLocalStorage(): void {
     try {
+      const now = Date.now();
+      // Per-message 90-day rolling TTL: purge any local message whose own timestamp is older than 90 days
+      this.messagesCache = this.messagesCache.filter(
+        (m) => now - m.createdAt < MESSAGE_RETENTION_MS
+      );
+
       localStorage.setItem(STORAGE_KEYS.USERS_CACHE, JSON.stringify(this.usersCache));
       localStorage.setItem(STORAGE_KEYS.CONTACTS_CACHE, JSON.stringify(this.contactsCache));
       localStorage.setItem(STORAGE_KEYS.CONVERSATIONS_CACHE, JSON.stringify(this.conversationsCache));
@@ -289,10 +298,12 @@ class StorageService {
       });
       this.reactionsCache = rMap;
 
-      // 6. Fetch messages
+      // 6. Fetch messages (Safety filter: fetch only messages sent within the rolling 90-day window)
       const rawMessages = (await sql`
         SELECT id, conversation_id, sender_id, content, text_color, font_size, sticker_id, is_scheduled, created_at
-        FROM messages ORDER BY created_at ASC;
+        FROM messages
+        WHERE created_at >= NOW() - INTERVAL '90 days'
+        ORDER BY created_at ASC;
       `) as unknown as RawDbMessage[];
 
       this.messagesCache = (rawMessages || []).map((m) => {
@@ -847,7 +858,81 @@ class StorageService {
   }
 
   public getConversationMessages(conversationId: string): Message[] {
-    return this.messagesCache.filter((m) => m.conversationId === conversationId);
+    const now = Date.now();
+    // Strict Per-Message 90-Day Rolling TTL: only return messages whose own timestamp is within 90 days
+    return this.messagesCache.filter(
+      (m) => m.conversationId === conversationId && now - m.createdAt < MESSAGE_RETENTION_MS
+    );
+  }
+
+  /**
+   * Fetches only messages sent within the rolling 90-day window for this conversation directly from Neon DB.
+   * Also triggers per-message rolling cleanup for expired messages (> 90 days).
+   */
+  public async fetchMessagesForConversation(conversationId: string): Promise<Message[]> {
+    try {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conversationId);
+      if (!isUUID) {
+        return this.getConversationMessages(conversationId);
+      }
+
+      // 1. Auto-Cleanup: Delete ONLY individual messages that were sent more than 90 days ago
+      await sql`
+        DELETE FROM messages
+        WHERE created_at < NOW() - INTERVAL '90 days';
+      `;
+
+      // 2. Fetch only messages sent within the last 90 days for this conversation
+      const rawMessages = (await sql`
+        SELECT id, conversation_id, sender_id, content, text_color, font_size, sticker_id, is_scheduled, created_at
+        FROM messages
+        WHERE conversation_id = ${conversationId}::uuid
+          AND created_at >= NOW() - INTERVAL '90 days'
+        ORDER BY created_at ASC;
+      `) as unknown as RawDbMessage[];
+
+      const mapped = (rawMessages || []).map((m) => {
+        const conv = this.conversationsCache.find((c) => c.id === m.conversation_id);
+        const receiverId = conv
+          ? conv.user_one_id === m.sender_id
+            ? conv.user_two_id
+            : conv.user_one_id
+          : '';
+
+        const d = new Date(m.created_at);
+        const isSticker = Boolean(m.sticker_id);
+
+        return {
+          id: m.id,
+          conversationId: m.conversation_id,
+          senderId: m.sender_id,
+          receiverId,
+          type: (isSticker ? 'sticker' : 'text') as 'sticker' | 'text',
+          text: isSticker ? '' : m.content || '',
+          stickerId: m.sticker_id || undefined,
+          stickerFileId: undefined,
+          stickerName: undefined,
+          textColor: (m.text_color as ColorTheme) || 'black',
+          textSize: (m.font_size as TextSize) || 'M',
+          timestamp: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          createdAt: d.getTime(),
+          status: 'delivered' as const,
+          isScheduledDispatch: Boolean(m.is_scheduled),
+          reactions: this.reactionsCache[m.id] || {},
+        };
+      });
+
+      this.messagesCache = [
+        ...this.messagesCache.filter((m) => m.conversationId !== conversationId),
+        ...mapped,
+      ];
+      this.saveToLocalStorage();
+
+      return mapped;
+    } catch (err) {
+      console.warn('Neon fetchMessagesForConversation error:', err);
+      return this.getConversationMessages(conversationId);
+    }
   }
 
   public sendMessage(params: {
@@ -984,7 +1069,28 @@ class StorageService {
 
   public getPinnedMessageId(conversationId: string): string | null {
     const conv = this.conversationsCache.find((c) => c.id === conversationId);
-    return conv?.pinned_message_id || null;
+    if (!conv?.pinned_message_id) return null;
+
+    // Check if pinned message still exists and is within its rolling 90-day lifecycle
+    const now = Date.now();
+    const msg = this.messagesCache.find(
+      (m) => m.id === conv.pinned_message_id && now - m.createdAt < MESSAGE_RETENTION_MS
+    );
+
+    if (!msg) {
+      // Pinned message has expired past 90 days and was deleted -> automatically set pinned_message_id = null
+      conv.pinned_message_id = undefined;
+      this.saveToLocalStorage();
+
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conversationId);
+      if (isUUID) {
+        sql`UPDATE conversations SET pinned_message_id = NULL WHERE id = ${conversationId}::uuid;`
+          .catch((err) => console.warn('Neon auto-clear expired pin error:', err));
+      }
+      return null;
+    }
+
+    return conv.pinned_message_id;
   }
 
   public setPinnedMessageId(conversationId: string, messageId: string | null): void {

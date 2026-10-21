@@ -122,6 +122,16 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
   ON messages(conversation_id, created_at ASC);
 
+CREATE INDEX IF NOT EXISTS idx_messages_created_at
+  ON messages(created_at ASC);
+
+-- Pinned message foreign key with ON DELETE SET NULL
+-- (If pinned message expires after 90 days, auto-nullifies without deleting conversation)
+ALTER TABLE conversations
+  ADD CONSTRAINT fk_conversations_pinned_message
+  FOREIGN KEY (pinned_message_id) REFERENCES messages(id)
+  ON DELETE SET NULL;
+
 -- 4. MESSAGE REACTIONS TABLE
 CREATE TABLE IF NOT EXISTS message_reactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

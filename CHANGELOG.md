@@ -25,7 +25,12 @@ All notable changes to this project are documented in this file in accordance wi
     1. **`@Hushadmin`**: `Hush Administrator` (`account_type: SYSTEM_ADMIN`, `access_level: ADMIN_ONLY`, `can_chat: false`, `is_immutable_admin: true`, Password: `Admin@002452@`).
     2. **`@New010`**: `Nithi` (`account_type: MEMBER`, `access_level: FULL_ACCESS`, `can_chat: true`, `is_immutable_admin: false`, Password: `N!ew@14523@`).
     3. **`@Fernrs`**: `Rungfa` (`account_type: MEMBER`, `access_level: USER`, `can_chat: true`, `is_immutable_admin: false`, Password: `F!ern@02020@`).
-  - Reset `messages`, `message_reactions`, and `schedules` to 0 rows.
+- **Per-Message 90-Day Rolling TTL Retention Policy:**
+  - Enforced per-message granularity: each individual message has an independent 90-day lifecycle starting from `messages.created_at` (not from `conversations.created_at`).
+  - Rolling cleanup query purges ONLY individual messages older than 90 days (`DELETE FROM messages WHERE created_at < NOW() - INTERVAL '90 days'`), keeping newer conversation messages intact.
+  - Fetch queries include safety filter (`WHERE created_at >= NOW() - INTERVAL '90 days'`).
+  - Added index `idx_messages_created_at` on `messages(created_at ASC)`.
+  - Added foreign key constraint `fk_conversations_pinned_message` with `ON DELETE SET NULL`: if a pinned message expires past 90 days, `pinned_message_id` automatically resets to `NULL` without affecting the conversation.
 
 ---
 

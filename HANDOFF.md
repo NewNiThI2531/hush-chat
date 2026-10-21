@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS conversations (
   CONSTRAINT chk_ordered_pair CHECK (user_one_id < user_two_id)
 );
 
--- 3. MESSAGES TABLE (90-Day Auto Retention)
+-- 3. MESSAGES TABLE (Per-Message 90-Day Rolling TTL Retention)
 CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -91,6 +91,17 @@ CREATE TABLE IF NOT EXISTS messages (
 
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
   ON messages(conversation_id, created_at ASC);
+
+CREATE INDEX IF NOT EXISTS idx_messages_created_at
+  ON messages(created_at ASC);
+
+-- Pinned message foreign key (ON DELETE SET NULL)
+-- When an individual message expires past 90 days and is deleted,
+-- conversations.pinned_message_id is automatically set to NULL without affecting the conversation.
+ALTER TABLE conversations
+  ADD CONSTRAINT fk_conversations_pinned_message
+  FOREIGN KEY (pinned_message_id) REFERENCES messages(id)
+  ON DELETE SET NULL;
 
 -- 4. MESSAGE REACTIONS TABLE
 CREATE TABLE IF NOT EXISTS message_reactions (

@@ -71,7 +71,25 @@ async function migrateAndSeed() {
     CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
       ON messages(conversation_id, created_at ASC);
   `;
-  console.log('✓ messages table created/verified');
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_messages_created_at
+      ON messages(created_at ASC);
+  `;
+  await sql`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'fk_conversations_pinned_message'
+      ) THEN
+        ALTER TABLE conversations
+        ADD CONSTRAINT fk_conversations_pinned_message
+        FOREIGN KEY (pinned_message_id) REFERENCES messages(id)
+        ON DELETE SET NULL;
+      END IF;
+    END $$;
+  `;
+  console.log('✓ messages table created/verified with rolling 90-day retention index and pinned FK');
 
   // 4. message_reactions
   await sql`

@@ -38,11 +38,11 @@
 ## 🧠 2. System Analyst Agent (SA)
 - **Responsibilities:**
   - Audit live Neon Serverless PostgreSQL database directly via `NEON_DATABASE_URL`.
-  - Execute database cleanup:
-    - Ensure only the 3 authorized production accounts exist in `users`.
-    - Purge any fake/demo messages, message reactions, and schedules (reset to 0 rows for a clean production start).
-    - Maintain 100% relational integrity with foreign keys and 90-day retention query.
-- **SA Sign-Off:** ✅ *Neon DB cleaned and verified. 0 demo rows remain.*
+  - Architect and enforce exact **Per-Message 90-Day Rolling TTL Retention Policy** (independent message lifecycle from `messages.created_at`, never from conversation creation).
+  - Add index `idx_messages_created_at` on `messages(created_at ASC)` for high-performance purge queries.
+  - Configure foreign key constraint `fk_conversations_pinned_message` on `conversations(pinned_message_id) REFERENCES messages(id) ON DELETE SET NULL` so expiring pinned messages auto-nullify safely.
+  - Maintain 100% relational integrity with foreign keys and cascading rules.
+- **SA Sign-Off:** ✅ *Neon DB schema verified: per-message rolling 90-day index and ON DELETE SET NULL constraint active.*
 
 ---
 
@@ -58,10 +58,13 @@
 ## 💻 4. Developer Agent (DEV)
 - **Responsibilities:**
   - Permanently delete `src/data/mockData.ts` and all hardcoded mock arrays (`INITIAL_USERS`, `MOCK_USERS`, `DEMO_MESSAGES`, `SEED_DATA`).
-  - Implement `purgeLegacyMockStorage()` on application initialization to automatically clear any stale `hush_*` mock keys from client browsers.
-  - Eliminate offline mock fallback logic so 0 messages render a clean empty conversation state.
-  - Remove default fallback password (`password123`) in favor of strict SHA-256 database authentication.
-- **DEV Sign-Off:** ✅ *Zero TypeScript errors, 100% live Neon DB queries verified.*
+  - Implement per-message 90-day rolling cleanup query:
+    `DELETE FROM messages WHERE created_at < NOW() - INTERVAL '90 days';`
+  - Implement safety filter in fetch queries:
+    `SELECT * FROM messages WHERE conversation_id = $1 AND created_at >= NOW() - INTERVAL '90 days' ORDER BY created_at ASC;`
+  - Auto-nullify `pinned_message_id` in `getPinnedMessageId` when pinned message has expired past 90 days.
+  - Purge expired messages from local cache during `saveToLocalStorage()` so browser storage never hoards stale messages.
+- **DEV Sign-Off:** ✅ *Zero TypeScript errors, 100% live Neon DB queries & rolling retention verified.*
 
 ---
 
@@ -79,8 +82,9 @@
 - **Responsibilities:**
   - Perform codebase grep audit for mock identifiers (`"Sophie"`, `"Marcus"`, `"Alex Lee"`, `"Simulate"`, `"ทดสอบ"`).
   - Verify 0 occurrences remain in UI components.
+  - Verify Per-Message 90-Day Rolling TTL: confirmed only individual expired messages are purged while newer messages in the conversation remain intact.
   - Verify `npm run build` succeeds with zero errors.
-- **Tester Sign-Off:** ✅ *Grep audit passed (0 occurrences in UI), Vite build clean.*
+- **Tester Sign-Off:** ✅ *Grep audit passed (0 occurrences in UI), rolling TTL verified, Vite build clean.*
 
 ---
 
