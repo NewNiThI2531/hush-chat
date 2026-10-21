@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import type { Message, User } from '../types/chat';
 import { MessageBubble } from './MessageBubble';
-import { MessageSquareDashed, Lock } from 'lucide-react';
+import { MessageSquareDashed } from 'lucide-react';
 
 interface MessageListProps {
   messages: Message[];
@@ -65,20 +65,6 @@ export const MessageList: React.FC<MessageListProps> = ({
       style={{ backgroundColor: chatBgColor }}
       className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-2 transition-colors duration-300"
     >
-      {/* End-to-End Encryption Notice at top */}
-      <div className="flex flex-col items-center justify-center my-4 select-none">
-        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs shadow-xs ${
-          isDarkCanvas
-            ? 'bg-zinc-800/80 border-zinc-700 text-zinc-300'
-            : 'bg-white border-[#E5E7EB] text-slate-500'
-        }`}>
-          <Lock className="w-3.5 h-3.5 text-slate-400" />
-          <span>การสนทนาถูกเข้ารหัสแบบส่วนตัวระหว่างคุณและ {contact.name}</span>
-        </div>
-        <div className={`text-[11px] mt-1.5 ${isDarkCanvas ? 'text-zinc-500' : 'text-slate-400'}`}>
-          ประวัติการสนทนาจะถูกเคลียร์อัตโนมัติเมื่อครบ 90 วัน
-        </div>
-      </div>
 
       {/* Date badge */}
       <div className="flex items-center justify-center my-4 select-none">

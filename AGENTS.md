@@ -1,12 +1,11 @@
 # 🤖 HusH 7-Agent Squad Registry & Review Matrix
 
 **Project:** "HusH" — Private, Ultra-Fast Minimal Messaging Web App  
-**Target Version:** `v2.0.0-rc.1` (Clean Neon DB Build — Release Candidate 1)  
-**Previous Version (`main`):** `v1.0.1` (Interactive mockup phase)  
-**Current Pushed Branch:** `release/v2.0.0-production` (`v2.0.0-rc.1` — Clean Neon DB build, zero mock data)  
-**Next Step:** After verifying the Vercel Preview Deployment URL on `release/v2.0.0-production`, merge into `main` as `v2.0.0`.  
+**Target Version:** `v2.0.1` (Production Bugfix & UI Decluttering)  
+**Previous Version:** `v2.0.0-rc.1`  
+**Current Pushed Branch:** `release/v2.0.0-production`, `main`  
 **Database:** Neon Serverless PostgreSQL (`ep-muddy-hill`)  
-**Status:** ✅ **ALL 7 AGENTS SIGNED OFF FOR v2.0.0-rc.1 PREVIEW TESTING**
+**Status:** ✅ **ALL 7 AGENTS SIGNED OFF FOR v2.0.1 PRODUCTION RELEASE**
 
 ---
 
@@ -14,13 +13,13 @@
 
 | Agent Role | Title | Core Focus | Sign-Off Status |
 |---|---|---|---|
-| **📋 PM** | Project Manager Agent | 100% Mock Purge & Production Accounts Validation | ✅ Signed Off (`v2.0.0-rc.1`) |
-| **🧠 SA** | System Analyst Agent | Neon PostgreSQL DDL Verification, Messages Reset & Cleanup | ✅ Signed Off (`v2.0.0-rc.1`) |
-| **🎨 UI/UX** | UI & UX Designer Agent | Strict Minimalist Login & Total Removal of Demo/Test UI | ✅ Signed Off (`v2.0.0-rc.1`) |
-| **💻 DEV** | Developer Agent | Neon Serverless Client, Live Sync, Zero Fallbacks & Purge Script | ✅ Signed Off (`v2.0.0-rc.1`) |
-| **🧪 TestLead** | QA Test Lead Agent | SHA-256 DB Auth Validation & Zero-Message Empty State | ✅ Signed Off (`v2.0.0-rc.1`) |
-| **🔍 Tester** | QA Functional & Responsive Tester | 0 Mock/Demo Codebase Grep Audit & Clean Build | ✅ Signed Off (`v2.0.0-rc.1`) |
-| **🚀 DevOps** | DevOps & Release Agent | Branch `release/v2.0.0-production`, Tag `v2.0.0-rc.1` | ✅ Signed Off (`v2.0.0-rc.1`) |
+| **📋 PM** | Project Manager Agent | Product Scope, Clutter Removal & Account Verification | ✅ Signed Off (`v2.0.1`) |
+| **🧠 SA** | System Analyst Agent | LEAST/GREATEST UUID Constraint Fix & Migration (`show_phone`, `show_age`) | ✅ Signed Off (`v2.0.1`) |
+| **🎨 UI/UX** | UI & UX Designer Agent | Clutter & Badge Removal, Redesigned Profile Setting Modal | ✅ Signed Off (`v2.0.1`) |
+| **💻 DEV** | Developer Agent | Message Sending Pipeline, Optimistic UI & Sync Repair | ✅ Signed Off (`v2.0.1`) |
+| **🧪 TestLead** | QA Test Lead Agent | Live Message Flow Verification between New010 and Fernrs | ✅ Signed Off (`v2.0.1`) |
+| **🔍 Tester** | QA Functional & Responsive Tester | Grep Audit (0 Technical Jargon), Clean Build Verification | ✅ Signed Off (`v2.0.1`) |
+| **🚀 DevOps** | DevOps & Release Agent | Branch Sync, Tag `v2.0.1`, Push to GitHub & Vercel | ✅ Signed Off (`v2.0.1`) |
 
 ---
 

@@ -164,17 +164,26 @@ export function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Current conversation ID
+  // Current conversation ID (Synchronously resolved from storage cache)
   const conversationId = useMemo(() => {
     if (!currentUser || !activeContact) return '';
-    return getConversationId(currentUser.id, activeContact.id);
-  }, [currentUser, activeContact]);
+    return storageService.getConversationIdSync(currentUser.id, activeContact.id);
+  }, [currentUser, activeContact, version]);
 
-  // Current conversation messages
+  // Auto-Provision 1:1 conversation row safely in Neon PostgreSQL
+  useEffect(() => {
+    if (currentUser && activeContact) {
+      storageService.getOrCreateConversationId(currentUser.id, activeContact.id).then(() => {
+        triggerUpdate();
+      });
+    }
+  }, [currentUser?.id, activeContact?.id]);
+
+  // Current conversation messages (optimistic + Neon synced)
   const conversationMessages = useMemo(() => {
-    if (!conversationId) return [];
-    return storageService.getConversationMessages(conversationId);
-  }, [conversationId, version]);
+    if (!currentUser || !activeContact) return [];
+    return storageService.getConversationMessages(conversationId, currentUser.id, activeContact.id);
+  }, [conversationId, currentUser, activeContact, version]);
 
   // Pinned message
   const pinnedMessageId = useMemo(() => {
@@ -240,7 +249,7 @@ export function App() {
     setJumpTargetId(null);
     setMobileView('chat');
     if (currentUser) {
-      const cId = getConversationId(currentUser.id, contact.id);
+      const cId = storageService.getConversationIdSync(currentUser.id, contact.id);
       storageService.markConversationAsRead(cId, currentUser.id);
       triggerUpdate();
     }

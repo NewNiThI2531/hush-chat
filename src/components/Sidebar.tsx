@@ -2,7 +2,7 @@ import React from 'react';
 import type { User, Message } from '../types/chat';
 import { SoundWaveLogo } from './SoundWaveLogo';
 import { Avatar } from './Avatar';
-import { Pin, Settings, LogOut, RotateCcw, ShieldAlert, UserPlus, Users } from 'lucide-react';
+import { Pin, Settings, LogOut, ShieldAlert, UserPlus, Users } from 'lucide-react';
 
 interface SidebarProps {
   currentUser: User;
@@ -10,9 +10,9 @@ interface SidebarProps {
   activeContact?: User;
   onSelectContact: (contact: User) => void;
   onLogout: () => void;
-  onResetData: () => void;
+  onResetData?: () => void;
   onOpenProfileSettings: () => void;
-  onOpenVersionModal: () => void;
+  onOpenVersionModal?: () => void;
   onOpenAdminConsole?: () => void;
   onOpenAddFriend?: () => void;
   pinnedMessage?: Message | null;
@@ -28,9 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeContact,
   onSelectContact,
   onLogout,
-  onResetData,
   onOpenProfileSettings,
-  onOpenVersionModal,
   onOpenAdminConsole,
   onOpenAddFriend,
   pinnedMessage,
@@ -41,7 +39,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const canManageUsers =
     currentUser.accountType === 'SYSTEM_ADMIN' ||
-    currentUser.accountType === 'OWNER_ADMIN' ||
     currentUser.accessLevel === 'FULL_ACCESS';
 
   const otherContacts = activeContact
@@ -54,12 +51,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className={`h-full bg-white border-r border-[#E5E7EB] flex flex-col justify-between shrink-0 select-none transition-all ${className}`}>
       {/* Top Section */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Brand Header with clickable version badge */}
+        {/* Brand Header */}
         <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
           <SoundWaveLogo
             size="md"
-            versionBadge="v2.0.0-rc.1"
-            onVersionClick={onOpenVersionModal}
+            showSubtitle={false}
+            versionBadge=""
           />
         </div>
 
@@ -69,15 +66,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={onOpenAdminConsole}
-              className="w-full flex items-center justify-between px-3 py-2 bg-[#111827] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs group cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#111827] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-[#0EA5E9]" />
-                <span>Manage Users / Admin</span>
-              </div>
-              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-white/20 text-white">
-                RBAC
-              </span>
+              <ShieldAlert className="w-4 h-4 text-[#0EA5E9]" />
+              <span>Manage User</span>
             </button>
           )}
 
@@ -88,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-[#0EA5E9] border border-[#E5E7EB] hover:border-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5 text-[#0EA5E9]" />
-              <span>+ Add Friend by Username</span>
+              <span>Add Friend</span>
             </button>
           )}
         </div>
@@ -246,16 +238,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               showStatus
             />
             <div className="min-w-0">
-              <div className="text-xs font-bold text-[#111827] truncate flex items-center gap-1.5">
-                <span>{currentUser.name}</span>
-                {currentUser.accountType === 'OWNER_ADMIN' && (
-                  <span className="text-[9px] font-extrabold px-1 rounded bg-sky-100 text-[#0284C7]">
-                    OWNER
-                  </span>
-                )}
+              <div className="text-xs font-bold text-[#111827] truncate">
+                {currentUser.name}
               </div>
               <div className="text-[11px] text-[#0EA5E9] font-medium truncate">
-                @{currentUser.username} • {currentUser.accessLevel}
+                @{currentUser.username}
               </div>
             </div>
           </div>
@@ -282,16 +269,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         </div>
-
-        {/* Neon Database Sync button */}
-        <button
-          onClick={onResetData}
-          className="w-full mt-2 flex items-center justify-center gap-1.5 text-[11px] text-slate-400 hover:text-sky-600 py-1 transition-colors cursor-pointer"
-          title="ซิงค์ข้อมูลล่าสุดกับ Neon Serverless PostgreSQL"
-        >
-          <RotateCcw className="w-3 h-3 text-sky-500" />
-          <span>ซิงค์ฐานข้อมูล (Sync Neon DB)</span>
-        </button>
       </div>
     </aside>
   );

@@ -108,7 +108,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
     setEditUsername(user.username);
     setEditPassword(user.password || '');
     setEditFirstName(user.firstName);
-    setEditLastName(user.lastName);
+    setEditLastName(user.lastName || '');
     setEditJobTitle(user.jobTitle || '');
     setEditBio(user.bio || '');
     setEditAccessLevel(user.accessLevel);
@@ -241,14 +241,11 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-[#111827]">
-                  Admin & User Directory Console
+                  Manage User
                 </h2>
-                <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  Neon PostgreSQL • v2.0.0
-                </span>
               </div>
               <p className="text-xs text-slate-500">
-                จัดการบัญชีผู้ใช้งาน, สิทธิ์การเข้าถึง (Tiered Access), และแก้ไข Username สำหรับระบบฐานข้อมูล Neon PostgreSQL
+                จัดการบัญชีผู้ใช้งาน สิทธิ์การเข้าถึง และข้อมูลสมาชิกในระบบ
               </p>
             </div>
           </div>
@@ -485,7 +482,7 @@ export const AdminConsoleModal: React.FC<AdminConsoleModalProps> = ({
                     สร้างผู้ใช้งานใหม่ (Create New User)
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    กำหนด @username, รหัสผ่าน, และสิทธิ์การเข้าถึงสำหรับ Neon PostgreSQL
+                    กำหนด @username, รหัสผ่าน, และสิทธิ์การเข้าถึงสำหรับผู้ใช้งาน
                   </p>
                 </div>
               </div>

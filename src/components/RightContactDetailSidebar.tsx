@@ -66,7 +66,9 @@ export const RightContactDetailSidebar: React.FC<RightContactDetailSidebarProps>
   // Optional fields
   const job = (contact.jobTitle || contact.role || '').trim();
   const bioDetails = (contact.bio || contact.details || '').trim();
-  const hasMetadata = Boolean(contact.phone?.trim() || contact.age);
+  const showPhone = contact.showPhone !== false && Boolean(contact.phone?.trim());
+  const showAge = contact.showAge !== false && Boolean(contact.age);
+  const hasMetadata = showPhone || showAge;
 
   return (
     <>
@@ -167,10 +169,10 @@ export const RightContactDetailSidebar: React.FC<RightContactDetailSidebarProps>
               </p>
             )}
 
-            {/* Metadata: Phone & Age (only render if available) */}
+            {/* Metadata: Phone & Age (only render if available and show is enabled) */}
             {hasMetadata && (
               <div className="w-full mt-3 pt-3 border-t border-slate-200/80 grid grid-cols-2 gap-2 text-left">
-                {contact.phone && (
+                {showPhone && (
                   <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 uppercase">
                       <Phone className="w-3 h-3 text-slate-400" />
@@ -182,7 +184,7 @@ export const RightContactDetailSidebar: React.FC<RightContactDetailSidebarProps>
                   </div>
                 )}
 
-                {contact.age && (
+                {showAge && (
                   <div className="bg-white p-2 rounded-xl border border-slate-200/60">
                     <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 uppercase">
                       <Calendar className="w-3 h-3 text-slate-400" />
@@ -278,10 +280,6 @@ export const RightContactDetailSidebar: React.FC<RightContactDetailSidebarProps>
                 <Check className="w-3 h-3" /> บันทึกชื่อเล่นสำเร็จ
               </p>
             )}
-
-            <p className="text-[11px] text-slate-400 leading-normal pt-0.5">
-              💡 ชื่อเล่นนี้จะแสดงเฉพาะในหน้าจอของคุณใน Left Contacts List, Active Card และ Chat Header โดยไม่กระทบชื่อบัญชีจริงของคู่สนทนา
-            </p>
           </div>
 
           {/* 3. Chat Background Color Theme Selector */}
@@ -295,10 +293,6 @@ export const RightContactDetailSidebar: React.FC<RightContactDetailSidebarProps>
                 7 ธีม
               </span>
             </div>
-
-            <p className="text-[11px] text-slate-500">
-              เลือกโทนสีพื้นหลังสำหรับห้องแชทนี้ (บันทึกอัตโนมัติ):
-            </p>
 
             <div className="grid grid-cols-4 gap-2 pt-1">
               {CHAT_BACKGROUND_THEMES.map((theme) => {
@@ -337,11 +331,6 @@ export const RightContactDetailSidebar: React.FC<RightContactDetailSidebarProps>
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Ultra-clean footer */}
-        <div className="p-3.5 border-t border-[#E5E7EB] bg-[#F8FAFC] text-center text-[11px] text-slate-400">
-          HusH Chat • Contact Preferences
         </div>
       </aside>
     </>

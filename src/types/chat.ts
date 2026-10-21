@@ -18,7 +18,7 @@ export type AccessLevel = 'ADMIN_ONLY' | 'FULL_ACCESS' | 'VIEW_ALL' | 'USER';
 export interface User {
   id: string;              // maps to users.id UUID
   firstName: string;       // maps to users.first_name VARCHAR(100) (Required)
-  lastName: string;        // maps to users.last_name VARCHAR(100) (Required)
+  lastName?: string;       // maps to users.last_name VARCHAR(100) (Optional)
   name: string;            // maps to users.first_name + ' ' + users.last_name
   username: string;        // maps to users.username VARCHAR(64) UNIQUE
   password?: string;       // maps to users.password_hash TEXT
@@ -29,6 +29,8 @@ export interface User {
   avatarUrl?: string;      // maps to users.avatar_url TEXT
   phone?: string;          // maps to users.phone VARCHAR(50)
   age?: number | string;   // maps to users.age INT
+  showPhone?: boolean;     // maps to users.show_phone BOOLEAN DEFAULT TRUE
+  showAge?: boolean;       // maps to users.show_age BOOLEAN DEFAULT TRUE
   bio?: string;            // maps to users.bio TEXT
   details?: string;        // alias for bio
   status: 'online' | 'offline' | 'away';

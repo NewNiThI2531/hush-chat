@@ -363,7 +363,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="พิมพ์ข้อความ... (Enter เพื่อส่ง)"
+          placeholder="พิมพ์ข้อความ..."
           rows={1}
           className={`w-full bg-transparent resize-none border-0 focus:outline-none placeholder-slate-400 tabular-nums ${previewTextColor} ${previewTextSize} text-base md:text-inherit px-1.5 py-1 min-h-[36px]`}
         />
@@ -457,20 +457,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <span>Send</span>
             <Send className="w-3.5 h-3.5" />
           </button>
-        </div>
-      </div>
-
-      {/* Footer Subtext (Responsive format) */}
-      <div className="mt-1.5 px-1 text-[11px] text-slate-400">
-        {/* Desktop / Tablet */}
-        <div className="hidden sm:flex items-center justify-between">
-          <div>Enter to send · Shift + Enter for a new line</div>
-          <div>🔒 Just between you two · History auto-clears after 3 months</div>
-        </div>
-
-        {/* Mobile (< 640px) */}
-        <div className="sm:hidden text-center">
-          🔒 Private · Auto-clears after 3 months
         </div>
       </div>
     </div>

@@ -1,11 +1,10 @@
 # 🤝 HusH Multi-Agent Handoff Document (Session Continuity)
 
-**Target Version:** `v2.0.0-rc.1` (Release Candidate 1 — Clean Neon DB Build)  
-**Previous Version (`main`):** `v1.0.1` (Interactive mockup phase)  
-**Current Pushed Branch:** `release/v2.0.0-production` (`v2.0.0-rc.1` — Clean Neon DB build, zero mock data)  
-**Next Step:** After verifying the Vercel Preview Deployment URL on `release/v2.0.0-production`, merge into `main` as `v2.0.0`.  
+**Target Version:** `v2.0.1` (Production Bugfix & UI Decluttering)  
+**Previous Version:** `v2.0.0-rc.1`  
+**Current Pushed Branch:** `release/v2.0.0-production`, `main`  
 **Database:** Neon Serverless PostgreSQL (`ep-muddy-hill`)  
-**Status:** ✅ **v2.0.0-rc.1 Ready for Vercel Preview Testing on `release/v2.0.0-production`**
+**Status:** ✅ **v2.0.1 Ready for Production on `release/v2.0.0-production` & `main`**
 
 ---
 
@@ -13,7 +12,11 @@
 
 This handoff document provides continuous context for any incoming developer, AI agent, or engineering team member.
 
-In **`v2.0.0-rc.1`**, HusH packages a clean Neon DB build strictly to **`release/v2.0.0-production`** for Vercel Preview testing, with all Mockup and Demo data eradicated:
+In **`v2.0.1`**, HusH resolved critical message sending and UI decluttering:
+1. **Critical Message Pipeline Repaired:** Auto-provisioning conversations with `LEAST / GREATEST` UUID ordering satisfying PostgreSQL's `chk_ordered_pair` constraint, synchronous conversation ID cache resolution, optimistic UI rendering (<10ms), and bidirectional user pair message fallback matching.
+2. **Complete UI Decluttering:** Removed all badges (`CHAT`, version, `RBAC`), stripped role text from user account card, simplified composer placeholder, completely removed composer footer micro-copy and top encryption notice, and eliminated all gray helper texts.
+3. **Redesigned Profile Setting Modal:** Clean header title, optional Last Name, read-only Role field, editable & clearable Phone and Age with explicit Show/Hide (`แสดง` / `ซ่อน`) toggle buttons, and removal of privacy card.
+4. **Clean Manage User View:** Eradicated all technical database jargon (`Neon`, `PostgreSQL`, `RBAC`, `WebSocket`).
 
 1. **Total Mock Data & Fallback Purge:**
    - Deleted `src/data/mockData.ts` and all hardcoded mock arrays (`INITIAL_USERS`, `MOCK_USERS`, `DEMO_MESSAGES`, `SEED_DATA`).

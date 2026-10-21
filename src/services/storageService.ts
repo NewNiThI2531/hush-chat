@@ -79,6 +79,8 @@ interface RawDbUser {
   bio?: string;
   phone?: string;
   age?: number;
+  show_phone?: boolean;
+  show_age?: boolean;
   avatar_url?: string;
   avatar_color?: string;
   account_type: string;
@@ -166,6 +168,8 @@ function mapUser(row: RawDbUser): User {
     avatarUrl: row.avatar_url || undefined,
     phone: row.phone || undefined,
     age: row.age || undefined,
+    showPhone: row.show_phone !== undefined ? Boolean(row.show_phone) : true,
+    showAge: row.show_age !== undefined ? Boolean(row.show_age) : true,
     bio: row.bio || undefined,
     details: row.bio || undefined,
     status: row.is_online ? 'online' : 'offline',
@@ -255,6 +259,7 @@ class StorageService {
       // 2. Fetch users
       const rawUsers = (await sql`
         SELECT id, username, first_name, last_name, job_title, bio, phone, age,
+               show_phone, show_age,
                avatar_url, avatar_color, account_type, access_level, can_chat, is_immutable_admin, is_online, created_at
         FROM users ORDER BY created_at ASC;
       `) as unknown as RawDbUser[];
@@ -384,6 +389,7 @@ class StorageService {
     try {
       const rows = (await sql`
         SELECT id, username, password_hash, first_name, last_name, job_title, bio, phone, age,
+               show_phone, show_age,
                avatar_url, avatar_color, account_type, access_level, can_chat, is_immutable_admin, is_online, created_at
         FROM users
         WHERE LOWER(username) = LOWER(${clean})
@@ -546,12 +552,14 @@ class StorageService {
     }
 
     const first = updates.firstName !== undefined ? updates.firstName.trim() : existing.firstName;
-    const last = updates.lastName !== undefined ? updates.lastName.trim() : existing.lastName;
+    const last = updates.lastName !== undefined ? updates.lastName.trim() : (existing.lastName || '');
     const username = updates.username ? updates.username.trim().replace(/^@/, '') : existing.username;
     const job = updates.jobTitle !== undefined ? updates.jobTitle.trim() || null : existing.jobTitle || null;
     const bio = updates.bio !== undefined ? updates.bio.trim() || null : existing.bio || null;
     const phone = updates.phone !== undefined ? updates.phone.trim() || null : existing.phone || null;
-    const age = updates.age ? Number(updates.age) : existing.age ? Number(existing.age) : null;
+    const age = updates.age !== undefined ? (updates.age ? Number(updates.age) : null) : (existing.age ? Number(existing.age) : null);
+    const showPhone = updates.showPhone !== undefined ? updates.showPhone : (existing.showPhone !== false);
+    const showAge = updates.showAge !== undefined ? updates.showAge : (existing.showAge !== false);
     const accessLevel = updates.accessLevel || existing.accessLevel;
 
     await sql`
@@ -563,6 +571,8 @@ class StorageService {
         bio = ${bio},
         phone = ${phone},
         age = ${age},
+        show_phone = ${showPhone},
+        show_age = ${showAge},
         access_level = ${accessLevel}
       WHERE id = ${userId}::uuid AND is_immutable_admin = false;
     `;
@@ -573,12 +583,14 @@ class StorageService {
       username,
       firstName: first,
       lastName: last,
-      name: `${first} ${last}`.trim(),
+      name: `${first} ${last}`.trim() || first,
       jobTitle: job || undefined,
       role: job || undefined,
       bio: bio || undefined,
       phone: phone || undefined,
       age: age || undefined,
+      showPhone,
+      showAge,
       accessLevel,
     };
 
@@ -597,14 +609,18 @@ class StorageService {
     }
 
     const first = updates.firstName !== undefined ? updates.firstName.trim() : existing.firstName;
-    const last = updates.lastName !== undefined ? updates.lastName.trim() : existing.lastName;
+    const last = updates.lastName !== undefined ? updates.lastName.trim() : (existing.lastName || '');
+    const showPhone = updates.showPhone !== undefined ? updates.showPhone : (existing.showPhone !== false);
+    const showAge = updates.showAge !== undefined ? updates.showAge : (existing.showAge !== false);
     const updated: User = {
       ...existing,
       ...updates,
       firstName: first,
       lastName: last,
-      name: `${first} ${last}`.trim(),
+      name: `${first} ${last}`.trim() || first,
       role: updates.jobTitle || existing.role,
+      showPhone,
+      showAge,
     };
 
     const idx = this.usersCache.findIndex((u) => u.id === userId);
@@ -829,40 +845,73 @@ class StorageService {
   // ----------------------------------------------------
   // Conversations & 1:1 Messages
   // ----------------------------------------------------
-  public async getOrCreateConversationId(userAId: string, userBId: string): Promise<string> {
-    const u1 = userAId < userBId ? userAId : userBId;
-    const u2 = userAId < userBId ? userBId : userAId;
-
+  public getConversationIdSync(userAId: string, userBId: string): string {
     const existing = this.conversationsCache.find(
       (c) =>
-        (c.user_one_id === u1 && c.user_two_id === u2) ||
-        (c.user_one_id === u2 && c.user_two_id === u1)
+        (c.user_one_id === userAId && c.user_two_id === userBId) ||
+        (c.user_one_id === userBId && c.user_two_id === userAId)
+    );
+    if (existing) return existing.id;
+    return `${userAId}_${userBId}`;
+  }
+
+  public async getOrCreateConversationId(userAId: string, userBId: string): Promise<string> {
+    const existing = this.conversationsCache.find(
+      (c) =>
+        (c.user_one_id === userAId && c.user_two_id === userBId) ||
+        (c.user_one_id === userBId && c.user_two_id === userAId)
     );
     if (existing) return existing.id;
 
     try {
+      // Order UUIDs via LEAST and GREATEST so PostgreSQL chk_ordered_pair NEVER fails
       const rows = (await sql`
         INSERT INTO conversations (user_one_id, user_two_id)
-        VALUES (${u1}::uuid, ${u2}::uuid)
+        VALUES (LEAST(${userAId}::uuid, ${userBId}::uuid), GREATEST(${userAId}::uuid, ${userBId}::uuid))
         ON CONFLICT (user_one_id, user_two_id) DO UPDATE SET updated_at = NOW()
         RETURNING id, user_one_id, user_two_id, pinned_message_id, created_at, updated_at;
       `) as unknown as RawDbConversation[];
 
-      this.conversationsCache.push(rows[0]);
-      this.saveToLocalStorage();
-      return rows[0].id;
-    } catch {
-      // Fallback deterministic pseudo-UUID
-      return `conv_${u1.substring(0, 8)}_${u2.substring(0, 8)}`;
+      if (rows && rows.length > 0) {
+        const foundIdx = this.conversationsCache.findIndex((c) => c.id === rows[0].id);
+        if (foundIdx !== -1) {
+          this.conversationsCache[foundIdx] = rows[0];
+        } else {
+          this.conversationsCache.push(rows[0]);
+        }
+        this.saveToLocalStorage();
+        return rows[0].id;
+      }
+      return `${userAId}_${userBId}`;
+    } catch (err) {
+      console.warn('Neon getOrCreateConversationId error:', err);
+      return `${userAId}_${userBId}`;
     }
   }
 
-  public getConversationMessages(conversationId: string): Message[] {
+  public getConversationMessages(conversationId: string, userAId?: string, userBId?: string): Message[] {
     const now = Date.now();
+    const conv = this.conversationsCache.find((c) => c.id === conversationId);
+    const u1 = conv ? conv.user_one_id : userAId;
+    const u2 = conv ? conv.user_two_id : userBId;
+
     // Strict Per-Message 90-Day Rolling TTL: only return messages whose own timestamp is within 90 days
-    return this.messagesCache.filter(
-      (m) => m.conversationId === conversationId && now - m.createdAt < MESSAGE_RETENTION_MS
-    );
+    return this.messagesCache.filter((m) => {
+      if (now - m.createdAt >= MESSAGE_RETENTION_MS) return false;
+      // Direct conversation ID match
+      if (m.conversationId === conversationId) return true;
+      // Matching conversation object ID
+      if (conv && m.conversationId === conv.id) return true;
+      // Matching user pair from conversation row
+      if (u1 && u2 && ((m.senderId === u1 && m.receiverId === u2) || (m.senderId === u2 && m.receiverId === u1))) {
+        return true;
+      }
+      // Matching user pair fallback for optimistic messages before UUID resolution
+      if (userAId && userBId && ((m.senderId === userAId && m.receiverId === userBId) || (m.senderId === userBId && m.receiverId === userAId))) {
+        return true;
+      }
+      return false;
+    });
   }
 
   /**
@@ -951,9 +1000,19 @@ class StorageService {
     const now = new Date();
     const tempId = 'm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
 
+    // Resolve best known conversation ID synchronously
+    let activeConvId = params.conversationId;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(activeConvId);
+    if (!isUUID) {
+      const syncId = this.getConversationIdSync(params.senderId, params.receiverId);
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(syncId)) {
+        activeConvId = syncId;
+      }
+    }
+
     const newMessage: Message = {
       id: tempId,
-      conversationId: params.conversationId,
+      conversationId: activeConvId,
       senderId: params.senderId,
       receiverId: params.receiverId,
       type: params.type,
@@ -970,11 +1029,12 @@ class StorageService {
       reactions: {},
     };
 
+    // Optimistic UI: append immediately to local cache (< 10ms render)
     this.messagesCache.push(newMessage);
     this.saveToLocalStorage();
 
-    // Async persist to Neon
-    this.persistMessageToNeon(newMessage, params);
+    // Async persist to Neon DB
+    this.persistMessageToNeon(newMessage, { ...params, conversationId: activeConvId });
 
     return newMessage;
   }
@@ -999,8 +1059,8 @@ class StorageService {
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(convId);
       if (!isUUID) {
         convId = await this.getOrCreateConversationId(params.senderId, params.receiverId);
-        msg.conversationId = convId;
       }
+      msg.conversationId = convId;
 
       const rows = (await sql`
         INSERT INTO messages (
@@ -1009,7 +1069,7 @@ class StorageService {
           ${convId}::uuid,
           ${params.senderId}::uuid,
           ${params.text || ''},
-          ${params.textColor || '#111827'},
+          ${params.textColor || 'black'},
           ${params.textSize || 'M'},
           ${params.stickerId || null},
           ${Boolean(params.isScheduledDispatch)}

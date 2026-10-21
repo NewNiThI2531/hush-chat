@@ -4,6 +4,29 @@ All notable changes to this project are documented in this file in accordance wi
 
 ---
 
+## [v2.0.1] — 2026-10-21 (Branch: `release/v2.0.0-production`, `main`)
+
+### 🛠️ Production Bugfix & UI Decluttering Release
+- **Critical Message Sending & Display Pipeline Fixed (`SA` & `Developer`):**
+  - **Auto-Provision 1:1 Conversations Safely:** Implemented PostgreSQL `LEAST($1::uuid, $2::uuid)` and `GREATEST($1::uuid, $2::uuid)` ordering in `conversations` insertion query so it strictly satisfies `chk_ordered_pair` constraint without failure.
+  - **UUID vs. Local ID Synchronization:** Resolved conversation ID mapping between database UUIDs and optimistic client keys. `storageService.getConversationIdSync` synchronously resolves cached conversation UUIDs.
+  - **Optimistic UI (<10ms):** Appends messages immediately to local state and storage cache upon `Send`, with real-time background persistence to Neon PostgreSQL `messages` table.
+  - **Resilient Message Retrieval:** `getConversationMessages` matches messages by conversation UUID as well as bidirectional user pairs (`sender_id`/`receiver_id`), ensuring immediate rendering and zero message disappearance during state transitions.
+- **Production UI Decluttering (`UI/UX` & `Developer`):**
+  - **Brand Header & Sidebar:** Removed `CHAT` badge and version badge from top-left header; renamed `Manage Users / Admin` (stripped `RBAC` badge) to `Manage User` with visibility restricted strictly to `SYSTEM_ADMIN` (`Hushadmin`) and `FULL_ACCESS` (`New010`); renamed `+ Add Friend by Username` to `Add Friend`; stripped role text from bottom account footer; completely removed database sync button.
+  - **Chat Canvas & Composer:** Removed top encryption pill and 90-day subtext banner; simplified input placeholder to `พิมพ์ข้อความ...`; completely removed composer footer micro-copy.
+  - **Right Contact Detail Sidebar:** Removed gray helper descriptions under Nickname and Chat Background sections; removed redundant sidebar footer text.
+- **Profile Setting Modal Redesign (`UI/UX`, `SA` & `Developer`):**
+  - Cleaned header title to `Profile Setting` and removed subtitle.
+  - Made `Last Name` optional (removed required `*`).
+  - Added clean read-only `Role / สิทธิ์การใช้งาน` field beside `@username`.
+  - Added clearable & toggleable visibility (`showPhone`, `showAge`) with `Eye` / `EyeOff` (`แสดง` / `ซ่อน`) toggle buttons linked to `users.show_phone` and `users.show_age` in PostgreSQL.
+  - Removed bottom security & privacy notice box.
+- **Manage User View Cleanup:**
+  - Removed all database jargon (`Neon`, `PostgreSQL`, `RBAC`, `WebSocket`) and unnecessary developer banners.
+
+---
+
 ## [v2.0.0-rc.1] — 2026-10-20 (Branch: `release/v2.0.0-production`)
 
 ### 🚀 Release Candidate 1: Clean Neon DB Build (Zero Mock Data for Preview Testing)
