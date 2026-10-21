@@ -9,6 +9,7 @@ import type {
   AccessLevel,
 } from '../types/chat';
 import { sql } from './neonClient';
+import { CURATED_THIINGS_STICKERS } from '../data/thiingsStickers';
 
 const STORAGE_KEYS = {
   CURRENT_USER_ID: 'hush_current_user_id_v2',
@@ -950,6 +951,9 @@ class StorageService {
 
         const d = new Date(m.created_at);
         const isSticker = Boolean(m.sticker_id);
+        const thiingsSticker = isSticker && m.sticker_id
+          ? CURATED_THIINGS_STICKERS.find((s) => s.id === m.sticker_id)
+          : undefined;
 
         return {
           id: m.id,
@@ -959,8 +963,8 @@ class StorageService {
           type: (isSticker ? 'sticker' : 'text') as 'sticker' | 'text',
           text: isSticker ? '' : m.content || '',
           stickerId: m.sticker_id || undefined,
-          stickerFileId: undefined,
-          stickerName: undefined,
+          stickerFileId: thiingsSticker?.fileId,
+          stickerName: thiingsSticker?.name,
           textColor: (m.text_color as ColorTheme) || 'black',
           textSize: (m.font_size as TextSize) || 'M',
           timestamp: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

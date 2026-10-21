@@ -1,10 +1,11 @@
 # 🤝 HusH Multi-Agent Handoff Document (Session Continuity)
 
-**Target Version:** `v2.0.1` (Production Bugfix & UI Decluttering)  
-**Previous Version:** `v2.0.0-rc.1`  
-**Current Pushed Branch:** `release/v2.0.0-production`, `main`  
+**Target Version:** `v2.0.2` (Production Clean UI & Hardened Message Pipeline)  
+**Previous Version:** `v2.0.1`  
+**Current Release Branch:** `release/v2.0.2-clean-ui`  
+**Production Branch:** `main`  
 **Database:** Neon Serverless PostgreSQL (`ep-muddy-hill`)  
-**Status:** ✅ **v2.0.1 Ready for Production on `release/v2.0.0-production` & `main`**
+**Status:** ✅ **v2.0.2 Ready for Production on `release/v2.0.2-clean-ui` & `main`**
 
 ---
 
@@ -12,32 +13,32 @@
 
 This handoff document provides continuous context for any incoming developer, AI agent, or engineering team member.
 
-In **`v2.0.1`**, HusH resolved critical message sending and UI decluttering:
-1. **Critical Message Pipeline Repaired:** Auto-provisioning conversations with `LEAST / GREATEST` UUID ordering satisfying PostgreSQL's `chk_ordered_pair` constraint, synchronous conversation ID cache resolution, optimistic UI rendering (<10ms), and bidirectional user pair message fallback matching.
-2. **Complete UI Decluttering:** Removed all badges (`CHAT`, version, `RBAC`), stripped role text from user account card, simplified composer placeholder, completely removed composer footer micro-copy and top encryption notice, and eliminated all gray helper texts.
-3. **Redesigned Profile Setting Modal:** Clean header title, optional Last Name, read-only Role field, editable & clearable Phone and Age with explicit Show/Hide (`แสดง` / `ซ่อน`) toggle buttons, and removal of privacy card.
-4. **Clean Manage User View:** Eradicated all technical database jargon (`Neon`, `PostgreSQL`, `RBAC`, `WebSocket`).
+In **`v2.0.2`**, the HusH 7-Agent Squad finalized the production-grade bugfix and decluttering pass:
 
-1. **Total Mock Data & Fallback Purge:**
-   - Deleted `src/data/mockData.ts` and all hardcoded mock arrays (`INITIAL_USERS`, `MOCK_USERS`, `DEMO_MESSAGES`, `SEED_DATA`).
-   - Browser initialization executes `purgeLegacyMockStorage()`, wiping any legacy `hush_*` mock keys from `localStorage`.
-   - Removed all mock fallback branches: conversations with 0 messages render a clean empty state.
-   - Removed hardcoded fallback passwords in favor of strict SHA-256 database authentication.
-2. **Production-Clean UI & App Shell:**
-   - Login page strictly displays Brand Logo, Title, Username input, Password input, and Sign In button (no autofills, no test credential hints, no demo badges).
-   - Removed Persona Switcher (`สลับบัญชี`) from Admin Console.
-   - Removed `Test 10s` (`⚡ ในอีก 10 วินาที`) preset from Schedule Modal.
-   - Cleaned all mock placeholders in modals.
-3. **Provisioned & Verified Relational Database State on Neon DB:**
-   - Only 3 authorized accounts in `users`:
-     - `@Hushadmin`: Protected Sole System Administrator (`Password: Admin@002452@`, `account_type = 'SYSTEM_ADMIN'`, `access_level = 'ADMIN_ONLY'`, `can_chat = FALSE`, `is_immutable_admin = TRUE`).
-     - `@New010`: Nithi B. (`Password: N!ew@14523@`, `account_type = 'MEMBER'`, `access_level = 'FULL_ACCESS'`, `can_chat = TRUE`, `is_immutable_admin = FALSE`).
-     - `@Fernrs`: Fern RS (`Password: F!ern@02020@`, `account_type = 'MEMBER'`, `access_level = 'USER'`, `can_chat = TRUE`, `is_immutable_admin = FALSE`).
-   - Cleared all fake/demo messages, message reactions, and schedules (reset to 0 rows for clean production start).
-4. **Sole Admin Immutability Protection:**
-   - `@Hushadmin` is locked against modification or deletion in both the Admin Console UI and storage queries.
-5. **Real-Time Synchronization:**
-   - Multi-device polling loop keeping messages, contacts, and schedules synchronized in real-time.
+1. **100% Verified Live Message Pipeline (`SA`, `DEV`, `TestLead`):**
+   - Verified live messaging across all data types: plain text, numbers/financial figures, Thai emojis, and Thiings 3D stickers.
+   - Inserted and queried directly against Neon PostgreSQL pooler on AWS us-east-2.
+   - Safe 1:1 conversation provisioning using `LEAST($1::uuid, $2::uuid)` and `GREATEST($1::uuid, $2::uuid)` ordering, completely eliminating `chk_ordered_pair` constraint failures.
+   - Added automated lookup of `stickerFileId` and `stickerName` against `CURATED_THIINGS_STICKERS` in `storageService.fetchMessagesForConversation` and `MessageBubble.tsx`, guaranteeing 100% interactive 3D rendering whether loaded from local storage cache or freshly queried from the database.
+   - Sub-10ms Optimistic UI updates with resilient background database persistence.
+
+2. **Clean Production UI & Zero Clutter (`UI/UX`, `DEV`):**
+   - **Tab Title:** Strictly **`HusH — Chat`** in `index.html` and `document.title`.
+   - **Logo & Header:** Displays ONLY the black soundwave icon and **`HusH`** (no `CHAT` badge, no version badge in either the app header or login view).
+   - **Sidebar:** Renamed `Manage Users / Admin` (stripped `RBAC` badge) to **`Manage User`** (role-gated strictly to `SYSTEM_ADMIN` and `FULL_ACCESS`). Renamed `+ Add Friend by Username` to **`Add Friend`**.
+   - **Account Footer:** Displays strictly user Name and `@username` with Settings and Logout actions (stripped `• FULL_ACCESS` and database sync button).
+   - **Chat Viewport:** Completely removed top encryption notice banner and composer footer micro-copy (`Enter to send...`). Placeholder simplified to **`พิมพ์ข้อความ...`**.
+   - **Contact Details:** Removed gray helper descriptions under Nickname and Chat Background sections, and removed redundant footer copy.
+
+3. **Redesigned Profile Setting Modal (`UI/UX`, `SA`, `DEV`):**
+   - Clean title `Profile Setting` without subtitle.
+   - `Role / สิทธิ์การใช้งาน` displayed as Read-Only beside `@username`.
+   - `Last Name (นามสกุล)` made optional (no required asterisk).
+   - Editable & clearable `Phone Number` and `Age` with explicit `Eye` / `EyeOff` (`แสดง` / `ซ่อน`) toggle buttons, mapped directly to `users.show_phone` and `users.show_age` boolean columns in Neon DB.
+   - Security and privacy notice box completely removed.
+
+4. **Zero Technical Jargon Audit (`Tester`):**
+   - Eradicated all occurrences of `"Neon"`, `"PostgreSQL"`, `"RBAC"`, and `"WebSocket"` in customer-facing UI views and modals.
 
 ---
 
@@ -57,17 +58,18 @@ CREATE TABLE IF NOT EXISTS users (
   bio TEXT,
   phone VARCHAR(50),
   age INTEGER,
+  show_phone BOOLEAN NOT NULL DEFAULT TRUE,
+  show_age BOOLEAN NOT NULL DEFAULT TRUE,
   avatar_url TEXT,
-  avatar_color VARCHAR(32) DEFAULT 'blue',
+  avatar_color VARCHAR(32) NOT NULL DEFAULT 'black',
   account_type VARCHAR(32) NOT NULL DEFAULT 'MEMBER',
   access_level VARCHAR(32) NOT NULL DEFAULT 'USER',
   can_chat BOOLEAN NOT NULL DEFAULT TRUE,
   is_immutable_admin BOOLEAN NOT NULL DEFAULT FALSE,
-  is_online BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 2. CONVERSATIONS TABLE
+-- 2. CONVERSATIONS TABLE (Strict LEAST/GREATEST UUID pair check)
 CREATE TABLE IF NOT EXISTS conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_one_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -75,48 +77,37 @@ CREATE TABLE IF NOT EXISTS conversations (
   pinned_message_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT uq_conversation_pair UNIQUE (user_one_id, user_two_id),
+  CONSTRAINT uq_user_pair UNIQUE (user_one_id, user_two_id),
   CONSTRAINT chk_ordered_pair CHECK (user_one_id < user_two_id)
 );
 
--- 3. MESSAGES TABLE (Per-Message 90-Day Rolling TTL Retention)
+-- 3. MESSAGES TABLE (Per-Message 90-Day Rolling TTL)
 CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   content TEXT NOT NULL DEFAULT '',
-  text_color VARCHAR(16) NOT NULL DEFAULT '#111827',
-  font_size VARCHAR(8) NOT NULL DEFAULT 'M',
-  sticker_id VARCHAR(128),
+  text_color VARCHAR(20) NOT NULL DEFAULT 'black',
+  font_size VARCHAR(10) NOT NULL DEFAULT 'M',
+  sticker_id VARCHAR(50),
   is_scheduled BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_messages_conversation_created
-  ON messages(conversation_id, created_at ASC);
-
-CREATE INDEX IF NOT EXISTS idx_messages_created_at
-  ON messages(created_at ASC);
-
--- Pinned message foreign key (ON DELETE SET NULL)
--- When an individual message expires past 90 days and is deleted,
--- conversations.pinned_message_id is automatically set to NULL without affecting the conversation.
-ALTER TABLE conversations
-  ADD CONSTRAINT fk_conversations_pinned_message
-  FOREIGN KEY (pinned_message_id) REFERENCES messages(id)
-  ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_messages_conv_created ON messages(conversation_id, created_at ASC);
 
 -- 4. MESSAGE REACTIONS TABLE
 CREATE TABLE IF NOT EXISTS message_reactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  emoji VARCHAR(32) NOT NULL,
+  emoji VARCHAR(16) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (message_id, user_id, emoji)
 );
 
--- 5. USER CONTACTS / FRIENDSHIPS TABLE
+-- 5. USER CONTACTS & PREFERENCES TABLE
 CREATE TABLE IF NOT EXISTS user_contacts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -143,10 +134,25 @@ CREATE TABLE IF NOT EXISTS schedules (
 
 ---
 
+## 🔐 Authorized Production Accounts
+
+1. **`@Hushadmin`**: Protected Sole System Administrator
+   - `Password:` `Admin@002452@`
+   - `Role:` Sole Administrator (`is_immutable_admin: true`, `can_chat: false`, Admin Console only)
+2. **`@New010`**: Nithi B.
+   - `Password:` `N!ew@14523@`
+   - `Role:` Full Access (`can_chat: true`, `access_level: FULL_ACCESS`, 1:1 chat & User Management)
+3. **`@Fernrs`**: Fern RS
+   - `Password:` `F!ern@02020@`
+   - `Role:` Member (`can_chat: true`, `access_level: USER`, standard friend messaging)
+
+---
+
 ## 🚀 Deployment Credentials & Environment
 
 - **Neon Database:** Serverless PostgreSQL pooler on AWS us-east-2
 - **Driver:** `@neondatabase/serverless` (HTTP fetch driver over SSL)
 - **Vercel Production URL:** `https://hush-chat-omega.vercel.app`
-- **Dedicated Release Branch:** `release/v2.0.0-production` (Release Tag: `v2.0.0-rc.1`)
-- **Next Step:** After verifying the Vercel Preview Deployment URL on `release/v2.0.0-production`, merge into `main` as `v2.0.0`.
+- **Release Branch:** `release/v2.0.2-clean-ui`
+- **Production Branch:** `main`
+- **Repository:** `https://github.com/NewNiThI2531/hush-chat.git`

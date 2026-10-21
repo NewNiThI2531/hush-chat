@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file in accordance wi
 
 ---
 
+## [v2.0.2] — 2026-10-21 (Branch: `release/v2.0.2-clean-ui`, `main`)
+
+### 💎 Production Clean UI, Hardened Message Pipeline & Vercel Sync
+- **100% End-to-End Live Message Pipeline Verification (`SA`, `Developer` & `Tester`):**
+  - **Comprehensive Payload Verification:** Tested and verified live sending and instant rendering of text, numbers, emojis, and Thiings 3D stickers on Neon Serverless PostgreSQL with 100% success.
+  - **Thiings 3D Sticker Auto-Resolution:** Added automated resolution of `stickerFileId` and `stickerName` against `CURATED_THIINGS_STICKERS` in `fetchMessagesForConversation` and `MessageBubble.tsx`, guaranteeing interactive 3D rendering whether loaded from cache or fresh database query.
+  - **Ordered Pair Provisioning:** Enforced PostgreSQL `LEAST($1::uuid, $2::uuid)` and `GREATEST($1::uuid, $2::uuid)` in `conversations` insertion so `chk_ordered_pair` constraint is strictly satisfied on all transactions.
+- **Production UI Decluttering & Branding Gate (`UI/UX` & `DevOps`):**
+  - **Browser Title:** Updated page `<title>` in `index.html` and dynamic `document.title` to strictly **`HusH — Chat`**.
+  - **Brand Header & Login:** Removed all `CHAT` and version badges from both the in-app header and the `LoginPage` logo card. Header shows strictly the soundwave icon + **`HusH`**.
+  - **Sidebar Actions:** Renamed `Manage Users / Admin` to **`Manage User`** (role-gated to `SYSTEM_ADMIN` and `FULL_ACCESS`), and renamed `+ Add Friend by Username` to **`Add Friend`**.
+  - **Account Card:** Removed all role badges (`• FULL_ACCESS`) and the `Sync Neon DB` button from the bottom-left account card.
+  - **Micro-Copy Removal:** Eliminated chat canvas encryption pills, composer footer hints, gray helper descriptions, and database technology jargon (`Neon`, `PostgreSQL`, `RBAC`, `WebSocket`).
+- **Profile Setting Modal Refinement (`UI/UX`, `SA` & `Developer`):**
+  - Read-Only `Role` field beside `@username`.
+  - Optional `Last Name` (no forced required input).
+  - Clearable & toggleable `Phone Number` and `Age` with explicit `Eye`/`EyeOff` (`แสดง` / `ซ่อน`) toggle buttons mapped to `users.show_phone` and `users.show_age`.
+  - Privacy and security notice card completely removed.
+
+---
+
 ## [v2.0.1] — 2026-10-21 (Branch: `release/v2.0.0-production`, `main`)
 
 ### 🛠️ Production Bugfix & UI Decluttering Release

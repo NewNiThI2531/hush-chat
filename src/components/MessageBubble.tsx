@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Message, User, ColorTheme, TextSize } from '../types/chat';
 import { ThiingsStickerDisplay } from './ThiingsStickerDisplay';
 import { StickerDisplay } from './StickerDisplay';
+import { CURATED_THIINGS_STICKERS } from '../data/thiingsStickers';
 import { CheckCheck, Pin, Copy, Smile, CheckCircle } from 'lucide-react';
 
 interface MessageBubbleProps {
@@ -196,10 +197,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           <div className="p-3">
             {message.type === 'sticker' ? (
               <div className="my-1 flex items-center justify-center">
-                {message.stickerFileId ? (
+                {message.stickerFileId || (message.stickerId && CURATED_THIINGS_STICKERS.some((s) => s.id === message.stickerId)) ? (
                   <ThiingsStickerDisplay
-                    fileId={message.stickerFileId}
-                    name={message.stickerName}
+                    fileId={
+                      message.stickerFileId ||
+                      CURATED_THIINGS_STICKERS.find((s) => s.id === message.stickerId)?.fileId ||
+                      ''
+                    }
+                    name={
+                      message.stickerName ||
+                      CURATED_THIINGS_STICKERS.find((s) => s.id === message.stickerId)?.name
+                    }
                     size="md"
                     interactive
                   />

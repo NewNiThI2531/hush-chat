@@ -41,7 +41,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       <div className="w-full max-w-sm">
         {/* Branding header */}
         <div className="text-center mb-6 flex flex-col items-center">
-          <SoundWaveLogo size="lg" versionBadge="v2.0.0-rc.1" className="mb-3" />
+          <SoundWaveLogo size="lg" className="mb-3" />
           <h1 className="text-xl font-bold text-[#111827] tracking-tight">
             เข้าสู่ระบบ HusH
           </h1>
