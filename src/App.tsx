@@ -82,6 +82,7 @@ export function App() {
 
   // Initial sync & Background Neon polling for multi-client real-time sync
   useEffect(() => {
+    document.title = 'HusH — Chat';
     storageService.init().then(() => {
       triggerUpdate();
     });
