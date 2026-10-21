@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Message, User, ColorTheme, TextSize } from '../types/chat';
 import { ThiingsStickerDisplay } from './ThiingsStickerDisplay';
 import { StickerDisplay } from './StickerDisplay';
@@ -15,7 +15,7 @@ interface MessageBubbleProps {
   searchQuery?: string;
 }
 
-const QUICK_REACTIONS = ['🙌', '❤️', '👍', '🔥', '🎉'];
+const QUICK_REACTIONS = ['🙌', '❤️', '👍', '🔥', '🎉', '😂'];
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
@@ -29,6 +29,29 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [openUpward, setOpenUpward] = useState(true);
+  const actionToolbarRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleReactionPicker = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showReactionPicker && actionToolbarRef.current) {
+      const rect = actionToolbarRef.current.getBoundingClientRect();
+      // If there's insufficient headroom (< 110px from top of viewport), open downward; otherwise upward
+      setOpenUpward(rect.top >= 110);
+    }
+    setShowReactionPicker((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (!showReactionPicker) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (actionToolbarRef.current && !actionToolbarRef.current.contains(e.target as Node)) {
+        setShowReactionPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showReactionPicker]);
 
   // Map color themes
   const textColorClasses: Record<ColorTheme, string> = {
@@ -96,7 +119,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       <div className="relative max-w-[88%] sm:max-w-[75%] md:max-w-[70%]">
         {/* Action Bar (hover on desktop OR tap on mobile) */}
         <div
-          className={`absolute -top-3.5 z-10 ${
+          ref={actionToolbarRef}
+          className={`absolute bottom-full mb-1 z-20 ${
             showMobileActions ? 'flex' : 'hidden group-hover:flex'
           } items-center gap-0.5 bg-white border border-[#E5E7EB] shadow-popover rounded-full p-0.5 transition-all ${
             isMe ? 'right-0' : 'left-0'
@@ -104,46 +128,24 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Reaction Picker Button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowReactionPicker(!showReactionPicker)}
-              title="Add Reaction"
-              className="p-1.5 sm:p-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-            >
-              <Smile className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Quick Reactions Popover */}
-            {showReactionPicker && (
-              <div
-                className="absolute top-full mt-1 left-0 bg-white border border-[#E5E7EB] shadow-popover rounded-full px-2 py-1 flex items-center gap-1.5 z-20 animate-scaleIn"
-                onMouseLeave={() => setShowReactionPicker(false)}
-              >
-                {QUICK_REACTIONS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => {
-                      onToggleReaction(message.id, emoji);
-                      setShowReactionPicker(false);
-                      setShowMobileActions(false);
-                    }}
-                    className="hover:scale-125 transition-transform text-sm p-1.5 rounded-full hover:bg-slate-100"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={handleToggleReactionPicker}
+            title="Add Reaction"
+            className="p-1.5 sm:p-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <Smile className="w-3.5 h-3.5" />
+          </button>
 
           {/* Pin Button */}
           <button
+            type="button"
             onClick={() => {
               onTogglePin(message.id);
               setShowMobileActions(false);
             }}
             title={isPinned ? 'ยกเลิกการปักหมุด' : 'ปักหมุดข้อความ (Pin)'}
-            className={`p-1.5 sm:p-1 rounded-full transition-colors ${
+            className={`p-1.5 sm:p-1 rounded-full transition-colors cursor-pointer ${
               isPinned
                 ? 'text-[#F97316] bg-orange-50 hover:bg-orange-100'
                 : 'text-slate-500 hover:text-[#F97316] hover:bg-slate-100'
@@ -155,9 +157,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           {/* Copy Button */}
           {message.type === 'text' && (
             <button
+              type="button"
               onClick={handleCopy}
               title="คัดลอกข้อความ (Copy)"
-              className="p-1.5 sm:p-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              className="p-1.5 sm:p-1 rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               {copied ? (
                 <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
@@ -165,6 +168,33 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                 <Copy className="w-3.5 h-3.5" />
               )}
             </button>
+          )}
+
+          {/* Quick Reactions Popover (Direction-aware: flips inward based on side) */}
+          {showReactionPicker && (
+            <div
+              className={`absolute ${
+                openUpward ? 'bottom-full mb-2' : 'top-full mt-2'
+              } ${
+                isMe ? 'right-0' : 'left-0'
+              } bg-white border border-[#E5E7EB] shadow-popover rounded-full px-2 py-1 flex items-center gap-1 sm:gap-1.5 z-30 animate-scaleIn whitespace-nowrap max-w-[calc(100vw-2rem)] select-none`}
+              onMouseLeave={() => setShowReactionPicker(false)}
+            >
+              {QUICK_REACTIONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => {
+                    onToggleReaction(message.id, emoji);
+                    setShowReactionPicker(false);
+                    setShowMobileActions(false);
+                  }}
+                  className="hover:scale-125 transition-transform text-sm sm:text-base p-1.5 rounded-full hover:bg-slate-100 cursor-pointer"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 

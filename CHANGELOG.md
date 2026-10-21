@@ -22,6 +22,11 @@ All notable changes to this project are documented in this file in accordance wi
   - Optional `Last Name` (no forced required input).
   - Clearable & toggleable `Phone Number` and `Age` with explicit `Eye`/`EyeOff` (`แสดง` / `ซ่อน`) toggle buttons mapped to `users.show_phone` and `users.show_age`.
   - Privacy and security notice card completely removed.
+- **Popover & Action Toolbar Overflow Fix (`UI/UX` & `Developer`):**
+  - **Eliminate Horizontal Scrollbar:** Enforced `overflow-x-hidden overflow-y-auto` on the chat scroll container in `MessageList.tsx`.
+  - **Direction-Aware Alignment:** Outgoing message action bar and reaction popovers anchor to `right-0` (expanding inward toward center), while incoming messages anchor to `left-0`.
+  - **Vertical Collision Prevention:** Floating action bar moved to `bottom-full mb-1` above bubble (preventing overlap on short messages like "Hi"), and reaction picker opens upward (`bottom-full mb-2`) or flips downward dynamically when near the top of viewport.
+  - **Reactions Expanded:** Added `😂` to quick reactions (`🙌 ❤️ 👍 🔥 🎉 😂`) with `max-w-[calc(100vw-2rem)]` and `whitespace-nowrap`.
 
 ---
 

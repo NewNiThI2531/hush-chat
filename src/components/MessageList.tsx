@@ -63,7 +63,7 @@ export const MessageList: React.FC<MessageListProps> = ({
     <div
       ref={containerRef}
       style={{ backgroundColor: chatBgColor }}
-      className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-2 transition-colors duration-300"
+      className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-8 py-6 space-y-2 transition-colors duration-300"
     >
 
       {/* Date badge */}
